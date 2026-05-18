@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD Ultimate Manager V3.1 — AH Prostory</title>
+<style>
+:root {
+  --bg: #f0f4f8; --card: #fff; --text: #2d3748; --muted: #718096;
+  --blue: #2563eb; --blue-h: #1d4ed8; --green: #16a34a; --green-h: #15803d;
+  --orange: #ea580c; --orange-h: #c2410c; --red: #dc2626; --yellow: #ca8a04;
+  --border: #e2e8f0; --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+header .user { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+header .user button { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 0; overflow-x: auto; }
+nav .tab { padding: 14px 20px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; transition: .2s; }
+nav .tab:hover { color: var(--text); }
+nav .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
+.card h3 { font-size: 15px; margin-bottom: 16px; color: var(--text); }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+.fg label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.fg input, .fg select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; background: #fafbfc; transition: .2s; }
+.fg input:focus, .fg select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+.stat { background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow); }
+.stat .num { font-size: 32px; font-weight: 700; }
+.stat .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.btn { padding: 9px 18px; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-p { background: var(--blue); color: #fff; } .btn-p:hover { background: var(--blue-h); }
+.btn-s { background: var(--green); color: #fff; } .btn-s:hover { background: var(--green-h); }
+.btn-o { background: var(--orange); color: #fff; } .btn-o:hover { background: var(--orange-h); }
+.btn-g { background: #e2e8f0; color: var(--text); } .btn-g:hover { background: #cbd5e1; }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 10px 12px; background: #f8fafc; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+tr:hover { background: #f8fafc; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.bg-new { background: #dcfce7; color: #166534; } .bg-diff { background: #fef9c3; color: #854d0e; } .bg-same { background: #f1f5f9; color: #64748b; }
+.toast { position: fixed; top: 72px; right: 24px; padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 13px; z-index: 200; animation: in .3s ease; }
+.toast-ok { background: var(--green); } .toast-err { background: var(--red); }
+@keyframes in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.loader { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300; }
+.spin { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pane { display: none; } .pane.active { display: block; }
+#login-screen { max-width: 400px; margin: 80px auto; }
+#main-screen { display: none; }
+.upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px; text-align: center; cursor: pointer; transition: .2s; }
+.upload-zone:hover { border-color: var(--blue); background: #f0f7ff; }
+.upload-zone.drag { border-color: var(--blue); background: #eff6ff; }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.chk input { width: auto; }
+.syncing { background: #fef9c3; color: #854d0e; padding: 8px 16px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; }
+.diff-row td { padding: 2px 4px; font-size: 11px; }
+.diff-old { text-decoration: line-through; color: #94a3b8; } .diff-new { color: #16a34a; font-weight: 600; }
+.search-box { position: relative; }
+.search-box input { width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; }
+.search-box input:focus { border-color: var(--blue); outline: none; }
+.user-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin: 6px 0; cursor: pointer; transition: .2s; }
+.user-card:hover { border-color: var(--blue); background: #f8faff; }
+.user-card.active { border-color: var(--blue); background: #eff6ff; }
+.user-card .name { font-weight: 600; } .user-card .info { font-size: 11px; color: var(--muted); }
+.group-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-top: 8px; background: #fafafa; }
+.group-item { display: flex; align-items: center; gap: 8px; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #f1f1f1; }
+.group-item:last-child { border-bottom: none; }
+.prog-w { width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; margin: 10px 0; display: none; }
+.prog-b { height: 100%; background: var(--blue); width: 0%; transition: width .2s; }
+
+/* === Тёмная тема (лайт-дарк) === */
+body.dark {
+  background: #1e2746; color: #d1d5e0;
+  transition: background 0.4s, color 0.4s;
+}
+body.dark * {
+  transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+body.dark header {
+  background: linear-gradient(135deg, #0f1b3d, #1a2a5e);
+}
+body.dark nav {
+  background: #1a2a5e; border-color: #2a3f7e;
+}
+body.dark .card, body.dark table, body.dark form, body.dark div[class*=box] {
+  background: #1e2a50; border-color: #2a3f7e; color: #d1d5e0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+body.dark th {
+  background: #2a3f7e; color: #e8ebf5;
+}
+body.dark td {
+  border-color: #1e2a50;
+}
+body.dark input, body.dark select, body.dark textarea {
+  background: #162244; color: #e0e4f0; border-color: #2a3f7e;
+}
+body.dark input:focus, body.dark select:focus, body.dark textarea:focus {
+  border-color: #4a6fd4; box-shadow: 0 0 0 2px rgba(74,111,212,0.25);
+}
+body.dark header .theme-toggle {
+  color: #c5d5f7 !important; opacity: 1 !important;
+  text-shadow: 0 0 8px rgba(74,111,212,0.6);
+  filter: drop-shadow(0 0 4px rgba(74,111,212,0.5));
+}
+body.dark header .theme-toggle:hover {
+  color: #fff !important; transform: scale(1.2);
+}
+body.dark .btn, body.dark button:not([style*=none]) {
+  opacity: 0.92; transition: opacity 0.2s, transform 0.2s;
+}
+body.dark .btn:hover, body.dark button:hover {
+  opacity: 1; transform: translateY(-1px);
+}
+body.dark tr:hover td {
+  background: #263566;
+}
+body.dark::-webkit-scrollbar { width: 8px; }
+body.dark::-webkit-scrollbar-track { background: #1a2a5e; }
+body.dark::-webkit-scrollbar-thumb { background: #2a3f7e; border-radius: 4px; }
+
+/* Аура/glow подсветка меню */
+body.dark nav { overflow: visible; }
+body.dark nav a, body.dark nav button {
+  position: relative; z-index: 1;
+  padding: 10px 16px; border-radius: 20px;
+  color: #8ea4d0; text-decoration: none;
+  transition: background 0.3s, box-shadow 0.3s, color 0.3s;
+}
+body.dark nav a:hover, body.dark nav button:hover,
+body.dark nav a.active {
+  background: rgba(74,111,212,0.2);
+  box-shadow: 0 0 20px rgba(74,111,212,0.4), 0 0 40px rgba(74,111,212,0.15), inset 0 0 12px rgba(74,111,212,0.2);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+</style></style>
+</head>
+<body>
+
+<div id="login-screen" class="card">
+<h2 style="text-align:center;margin-bottom:20px">🌾 AD Ultimate Manager V3.1</h2>
+<div class="fg"><label>IP сервера AD</label><input id="l-ip" value="10.0.2.21"></div>
+<div class="fg"><label>Логин AD</label><input id="l-user" placeholder="vardo001"></div>
+<div class="fg"><label>Пароль AD</label><input id="l-pass" type="password"></div>
+<button class="btn btn-p" style="width:100%;margin-top:12px" onclick="doLogin()">Войти</button>
+<div id="l-err" style="color:var(--red);text-align:center;margin-top:12px;font-size:13px"></div>
+</div>
+
+<div id="main-screen">
+<header><h1>🌾 AD Ultimate Manager V3.1</h1><div class="user"><span id="u-name"></span><button onclick="doLogout()">Выход</button></div></header>
+<nav>
+  <div class="tab active" data-tab="dash">📊 Обзор</div>
+  <div class="tab" data-tab="create">➕ Создать</div>
+  <div class="tab" data-tab="change">⚙️ Изменение</div>
+  <div class="tab" data-tab="disabled">🔴 Отключенные</div>
+  <div class="tab" data-tab="import">📦 Импорт/Экспорт</div>
+  <div class="tab" data-tab="reports">📋 Отчёты</div>
+  <div class="tab" data-tab="audit">📝 Аудит</div>
+  <div class="tab" data-tab="struct">📊 Структура</div>
+</nav>
+<main>
+  <div id="sync-msg" class="syncing">⏳ Синхронизация с AD...</div>
+
+  <!-- Dashboard -->
+  <div id="p-dash" class="pane active">
+    <div class="stats" id="dash-stats"></div>
+    <div style="text-align:right;margin-bottom:8px"><button class="btn btn-g btn-sm" onclick="resync()">🔄 Обновить из AD</button></div>
+    <div class="card" style="margin-top:20px"><h3>🔍 Быстрый поиск</h3><div class="search-box"><input placeholder="Введите имя или логин..." oninput="quickSearch(this.value)"></div><div id="quick-results"></div></div>
+    <div class="card"><h3>🕐 Последние действия</h3><div id="recent-audit">Загрузка...</div></div>
+  </div>
+
+  <!-- Create -->
+  <div id="p-create" class="pane">
+    <div class="card"><h3>Новый пользователь</h3>
+      <div class="fg" style="margin-bottom:14px"><label>ФИО (displayName) *</label><input id="c-name" oninput="splitFio('c')" placeholder="Фамилия Имя Отчество"></div>
+      <div class="row">
+        <div class="fg"><label>Фамилия (extensionAttribute1)</label><input id="c-sn"></div>
+        <div class="fg"><label>Имя (extensionAttribute2)</label><input id="c-gn"></div>
+        <div class="fg"><label>Отчество (extensionAttribute3)</label><input id="c-pn"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>CN (авто)</label><input id="c-cn" readonly style="background:#f8fafc;color:var(--muted);font-family:monospace"></div>
+        <div class="fg"><label>Логин (sam)</label><input id="c-sam" placeholder="ivanov.ii"></div>
+        <div class="fg"><label>Регион (st) *</label><select id="c-st" onchange="loadOU('c')"><option value="">-- Выберите --</option></select></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Офис (OU) *</label><select id="c-ou"></select></div>
+        <div class="fg"><label>Должность *</label><input id="c-title" list="titles"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Компания</label><input id="c-comp" list="comps"></div>
+        <div class="fg"><label>Отдел</label><input id="c-dept" list="depts"></div>
+      </div>
+      <div class="fg" style="margin-bottom:14px"><label>Руководитель</label><input id="c-mgr" list="mgrs"></div>
+      <div class="row">
+        <div class="fg"><label>Дата рождения (info)</label><input id="c-info" placeholder="ДД.ММ.ГГГГ" oninput="formatDate(this)"></div>
+        <div class="fg"><label>Рабочий тел.</label><input id="c-work"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Мобильный</label><input id="c-mob"></div>
+        <div class="fg"><label>Личный тел. (homePhone)</label><input id="c-pers"></div>
+        <div class="fg"><label>Город</label><input id="c-l" list="locs"></div>
+      </div>
+      <div class="row">
+        <div class="fg"><label>Адрес (Office)</label><input id="c-office" list="offices"></div>
+        <div class="fg"><label>Описание (description)</label><input id="c-desc" list="descs"></div>
+      </div>
+      <div class="fg" style="margin-bottom:14px"><label>Привязки (assistant)</label><input id="c-assistant" list="assts"></div>
+      <div class="row">
+        <div class="fg"><label>Email</label><input id="c-mail-input" placeholder="auto@ahprostory.ru"></div>
+        <div class="fg"><label>Почта (Exchange)</label><div style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="c-mail-chk" onchange="document.getElementById('c-exch-row').style.display=this.checked?'flex':'none'"><select id="c-exch-db" style="flex:1"></select></div></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="chk"><input type="checkbox" id="c-vpn" checked><label>🔒 Добавить в VPN-группу</label></div>
+        <div class="fg"><label>Пароль</label><div style="display:flex;gap:6px"><input id="c-pwd" value="Agro"><button class="btn btn-g btn-sm" onclick="genPwd()">🎲</button></div></div>
+      </div>
+      
+      <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px">
+        <label style="font-weight:600; margin-bottom:8px; display:block">🏢 Группы безопасности (AD Groups)</label>
+        <div class="search-box" style="margin-bottom:8px">
+          <input type="text" placeholder="Поиск групп..." oninput="filterCreateGroups(this.value)" style="padding:6px 12px; font-size:12px">
+        </div>
+        <div class="group-list" id="c-group-list">
+          <div style="font-size:11px;color:var(--muted)">Загрузка групп...</div>
+        </div>
+      </div>
+<button class="btn btn-s" style="width:100%;margin-top:16px" onclick="createUser()">🚀 СОЗДАТЬ В AD</button>
+      <div id="create-res" style="margin-top:12px"></div>
+    </div>
+  </div>
+  <div id="c-exch-row" style="display:none"></div>
+
+  
+  <!-- Disabled Users -->
+  <div id="p-disabled" class="pane">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h3>Отключенные пользователи</h3>
+        <div class="search-box" style="width:300px; margin:0">
+          <input type="text" id="dis-search" placeholder="Поиск среди отключенных..." oninput="filterDisabled(this.value)">
+        </div>
+      </div>
+      <div id="disabled-table">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Manage -->
+  <div id="p-change" class="pane">
+    <div class="card"><h3>Поиск и изменение</h3><div class="search-box"><input id="u-search" placeholder="Поиск по ФИО, логину, должности..." oninput="search()"></div><div id="u-results"></div></div>
+    <div id="m-form" class="card" style="display:none"></div>
+  </div>
+
+  <!-- Import -->
+  <div id="p-import" class="pane">
+    <div class="card"><h3>Загрузка CSV</h3>
+      <div class="upload-zone" id="csv-zone" onclick="document.getElementById('csv-file').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="event.preventDefault();this.classList.remove('drag');document.getElementById('csv-file').files=event.dataTransfer.files;compareCsv()">
+        <div style="font-size:40px">📁</div>
+        <div style="margin-top:8px;font-weight:600">Выберите файл или перетащите</div>
+        <div style="font-size:11px;color:var(--muted)">CSV (разделитель ";", кодировка Windows-1251)</div>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="compareCsv()">
+    </div>
+    <div class="card" style="margin-top:16px"><h3>📥 Экспорт</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p btn-sm" onclick="exportCsv('all')">📋 Все (без тех.учёток)</button>
+        <button class="btn btn-s btn-sm" onclick="exportCsv('with_attrs')">✅ С менеджером и отделом</button>
+        <button class="btn btn-o btn-sm" onclick="exportCsv('no_attrs')">⚠️ Без менеджера или отдела</button>
+      </div>
+    </div>
+    <div id="csv-results"></div>
+  </div>
+
+  <!-- Reports -->
+  <div id=p-reports class=pane>
+    <div class=card><h3>👔 Руководители</h3>
+      <div style="margin-bottom:12px; display:flex; gap:10px; align-items:center">
+        <button class="btn btn-o btn-sm" onclick="clearAllManagers()">🧹 Очистить всех руководителей</button>
+        <span style="font-size:11px; color:var(--muted)">⚠️ Внимание: очистит руководителя всем активным</span>
+      </div>
+      <div id="rep-mgrs-res" style="margin-bottom:8px"></div>
+      <div id="rep-mgrs">Загрузка...</div>
+    </div>
+    
+    <div class=card><h3>✏️ Пакетное редактирование пустых атрибутов</h3>
+      <div style="margin-bottom:16px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn btn-p btn-sm" onclick="fillEmpty('mail','auto@ahprostory.ru')">📧 Заполнить Email</button>
+        <button class="btn btn-p btn-sm" onclick="fillEmpty('title','Сотрудник')">💼 Заполнить Должность</button>
+        <button class="btn btn-p btn-sm" onclick="fillEmpty('l','г. Ростов-на-Дону')">📍 Заполнить Город</button>
+      </div>
+      <div style="display:flex; gap:10px; align-items:flex-end; padding-top:16px; border-top:1px solid var(--border)">
+        <div class="fg" style="flex:1">
+          <label>Выбрать компанию для пустых полей</label>
+          <input list="comps" id="batch-company-choice" placeholder="Выберите или введите название компании...">
+        </div>
+        <button class="btn btn-s" onclick="fillEmpty('company', document.getElementById('batch-company-choice').value, true)">🚀 СМЕНИТЬ КОМПАНИЮ (ВСЕМ)</button>
+      </div>
+      <div id="rep-fill-res" style="font-size:12px; margin-top:10px"></div>
+    </div>
+
+    <div class=card><h3>👥 Дубликаты</h3><div id="rep-dups">Загрузка...</div></div>
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <div style="display:flex; align-items:center; gap:12px">
+          <h3>📭 Пустые атрибуты</h3>
+          <label class="chk" style="font-weight:normal; font-size:11px; background:var(--bg); padding:4px 8px; border-radius:4px; border:1px solid var(--border); cursor:pointer">
+            <input type="checkbox" id="rep-hide-tech" checked onchange="loadReports()"> 🛡️ Скрыть технические/админские
+          </label>
+        </div>
+        <button class="btn btn-p btn-sm" onclick="loadReports()">🔍 Перепроверить всё</button>
+      </div>
+      <div id="rep-empty">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <div id="p-audit" class="pane">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h3>Журнал операций</h3>
+        <div style="display:flex; gap:10px; align-items:center">
+          <select id="audit-op-select" style="font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border)">
+            <option value="">-- Все операторы --</option>
+          </select>
+          <button class="btn btn-p btn-sm" onclick="downloadAudit()">📥 Скачать лог</button>
+        </div>
+      </div>
+      <div id="audit-table">Загрузка...</div>
+    </div>
+  </div>
+
+  <!-- Structure (XLSX) -->
+  <div id="p-struct" class="pane">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+        <h3>📊 Сравнение структуры с AD</h3>
+        <div style="display:flex; gap:10px">
+          <input type="file" id="xlsx-file" accept=".xlsx" style="display:none" onchange="uploadXlsx()">
+          <button class="btn btn-g btn-sm" onclick="document.getElementById('xlsx-file').click()">📁 Загрузить XLSX</button>
+          <button class="btn btn-p btn-sm" onclick="loadStruct()">🔄 Сравнить</button>
+          <button class="btn btn-s btn-sm" onclick="applyStruct()">✅ Применить</button>
+        </div>
+      </div>
+      <div id="struct-table">Загрузите XLSX и нажмите «Сравнить»...</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="loader" class="loader" style="display:none"><div class="spin"></div><p id="loader-msg" style="margin-top:12px;color:var(--muted)">Загрузка...</p><div id="loader-prog" class="prog-w" style="width:250px;display:none"><div id="loader-bar" class="prog-b"></div></div></div>
+<datalist id="titles"></datalist><datalist id="depts"></datalist><datalist id="comps"></datalist><datalist id="mgrs"></datalist><datalist id="locs"></datalist><datalist id="descs"></datalist><datalist id="assts"></datalist><datalist id="offices"></datalist>
+
+<script>
+const ATTR_NAMES = {
+  displayName: 'ФИО', title: 'Должность', department: 'Отдел', company: 'Компания',
+  l: 'Город', st: 'Регион', mail: 'Email', telephoneNumber: 'Раб.тел',
+  mobile: 'Моб.тел', homePhone: 'Лич.тел', manager: 'Руководитель',
+  description: 'Описание', office: 'Адрес', enabled: 'Активность'
+};
+const REGIONS = { 'RND':'Ростов', 'STV':'Ставрополь', 'KRD':'Краснодар', 'MSK':'Москва', 'NIZ':'Н.Новгород' };
+// Dynamic regions loaded from AD descriptions
+let REGION_NAMES = { ...REGIONS };
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, ok) { const t=document.createElement('div'); t.className='toast '+(ok?'toast-ok':'toast-err'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+function showL(on, msg = 'Загрузка...', prog = null) {
+  document.getElementById('loader').style.display = on ? 'flex' : 'none';
+  document.getElementById('loader-msg').textContent = msg;
+  const p = document.getElementById('loader-prog');
+  if (p) {
+    if (prog !== null) {
+      p.style.display = 'block';
+      document.getElementById('loader-bar').style.width = prog + '%';
+    } else {
+      p.style.display = 'none';
+    }
+  }
+}
+
+let AD = { users:[], ous:[], syncing:false };
+let batchData = [], currentDn = '', u_current_sam = '';
+async function api(url, opt={}) {
+  try {
+    const r = await fetch(url, { headers:{"Content-Type":"application/json"}, ...opt, credentials:"same-origin" });
+    if (!r.ok) {
+      const txt = await r.text();
+      let msg = txt;
+      try { const j = JSON.parse(txt); msg = j.error || j.message || txt; } catch(_) {}
+      throw new Error(msg);
+    }
+    return r.json();
+  } catch(e) {
+    console.error("API error:", url, e.message);
+    toast("Ошибка: " + e.message, false);
+    throw e;
+  }
+}
+
+// Auth
+async function doLogin() {
+  const u = document.getElementById('l-user').value, p = document.getElementById('l-pass').value;
+  const ip = document.getElementById('l-ip').value;
+  if (!u || !p) {
+    document.getElementById('l-err').textContent = 'Введите логин и пароль';
+    return;
+  }
+  document.getElementById('l-err').textContent = '';
+  showL(true);
+  try {
+    const r = await api('/auth/login', { method:'POST', body:JSON.stringify({username:u, password:p, adIp:ip}) });
+    showL(false);
+    if (r && r.success) {
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('main-screen').style.display='block';
+      init();
+    } else {
+      document.getElementById('l-err').textContent = (r && r.error) || 'Ошибка входа';
+    }
+  } catch(e) {
+    showL(false);
+    document.getElementById('l-err').textContent = 'Ошибка соединения: ' + (e.message || 'неизвестная');
+    console.error('Login error:', e);
+  }
+}
+async function doLogout() { await api('/auth/logout',{method:'POST'}); location.reload(); }
+async function checkAuth() { const r = await api('/auth/check'); if (r.authenticated) { document.getElementById('login-screen').style.display='none'; document.getElementById('main-screen').style.display='block'; init(); } else { document.getElementById('login-screen').style.display='block'; } }
+
+// Tabs
+document.querySelectorAll('nav .tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('nav .tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+t.dataset.tab).classList.add('active');
+  if (t.dataset.tab==='dash') loadDash();
+  if (t.dataset.tab==='reports') loadReports();
+  if (t.dataset.tab==='audit') loadAudit();
+  if (t.dataset.tab==='disabled') loadDisabled();
+});
+
+// Init
+async function init() {
+  await loadData();
+  document.getElementById('u-name').textContent = document.getElementById('l-user').value;
+  buildRegionSelects();
+  loadDash();
+}
+
+function buildRegionSelects() {
+  // Build REGION_NAMES from AD OU descriptions
+  REGION_NAMES = { ...REGIONS };
+  AD.ous.forEach(o => {
+    const dn = o.dn.toUpperCase();
+    // Find top-level region OUs (OU=XXX,DC=rusagroeco,DC=ru)
+    const parts = dn.split(',');
+    if (parts.length === 3 && parts[0].startsWith('OU=') && parts[1].trim() === 'DC=RUSAGROECO' && parts[2].trim() === 'DC=RU') {
+      const code = parts[0].substring(3);
+      if (code.length <= 4 && !['GROUPS','SPECIAL','PDC','SDC','SANDBOX'].includes(code)) {
+        if (!REGION_NAMES[code] || o.desc) {
+          REGION_NAMES[code] = o.desc || REGIONS[code] || code;
+        }
+      }
+    }
+  });
+  
+  // Build region options
+  const regionOpts = '<option value="">— Выберите —</option>' + 
+    Object.entries(REGION_NAMES).sort((a,b) => a[1].localeCompare(b[1])).map(([k,v]) => 
+      `<option value="${k}">${esc(v)}</option>`
+    ).join('');
+  
+  // Update all region selects
+  ['c-st'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const cur = el.value;
+      el.innerHTML = regionOpts;
+      if (cur) el.value = cur;
+    }
+  });
+}
+
+async function loadData() {
+  const r = await api('/api/data'); AD = r;
+  document.getElementById('sync-msg').style.display = AD.syncing ? 'block' : 'none';
+  if (!AD.syncing && AD.users && AD.users.length > 0) {
+    document.getElementById('titles').innerHTML = AD.titles.map(t=>`<option value="${esc(t)}">`).join('');
+    document.getElementById('depts').innerHTML = AD.depts.map(d=>`<option value="${esc(d)}">`).join('');
+    document.getElementById('comps').innerHTML = AD.comps.map(c=>`<option value="${esc(c)}">`).join('');
+    document.getElementById('mgrs').innerHTML = AD.users.filter(u=>!((Number(u.userAccountControl||0) & 2))).map(u=>`<option value="${esc(u.displayName)}">`).join('');
+    document.getElementById('locs').innerHTML = (AD.locations||[]).map(l=>`<option value="${esc(l)}">`).join('');
+    document.getElementById('descs').innerHTML = (AD.descriptions||[]).map(d=>`<option value="${esc(d)}">`).join('');
+    document.getElementById('assts').innerHTML = (AD.assistants||[]).map(a=>`<option value="${esc(a)}">`).join('');
+    document.getElementById('offices').innerHTML = (AD.offices||[]).map(o=>`<option value="${esc(o)}">`).join('');
+    document.getElementById('c-exch-db').innerHTML = Object.keys(AD.dbStats||{}).sort().map(db=>`<option value="${db}">${db} (${AD.dbStats[db]} юз.)</option>`).join('');
+    
+    // Populate creation group list
+    if (AD.groups) {
+      document.getElementById('c-group-list').innerHTML = AD.groups.map(g => `
+        <label class="group-item create-group-item" title="${esc(g.dn)}">
+          <input type="checkbox" class="c-group-chk" data-dn="${esc(g.dn)}">
+          <span>${esc(g.name || g.dn.split(',')[0].replace('CN=', ''))}</span>
+        </label>
+      `).join('');
+    }
+  }
+  // Poll until syncing completes (after login)
+  if (AD.syncing || !AD.users || !AD.users.length) {
+    await new Promise(r => setTimeout(r, 1500));
+    return loadData();
+  }
+  
+  // Refresh current view if needed
+  const activeTab = document.querySelector('nav .tab.active')?.dataset.tab;
+  if (activeTab === 'disabled') renderDisabled(document.getElementById('dis-search')?.value || '');
+  if (activeTab === 'change' && u_current_sam) openManage(u_current_sam);
+  if (activeTab === 'dash') loadDash();
+
+  return r;
+}
+
+// Dashboard
+async function resync() {
+  document.getElementById('dash-stats').innerHTML = '<div class="stat"><div class="num" style="color:var(--blue)">⏳</div><div class="lbl">Обновление...</div></div>';
+  const r = await api('/api/resync', {method:'POST'});
+  if (r.success) {
+    await loadData();
+    loadDash();
+    toast(`✅ Обновлено: ${r.users} пользователей, ${r.ous} OU`, true);
+  } else {
+    toast('Ошибка обновления', false);
+    loadDash();
+  }
+}
+
+function loadDash() {
+  if (!AD.users.length) return;
+  const active = AD.users.filter(u => !((Number(u.userAccountControl||0) & 2))).length;
+  document.getElementById('dash-stats').innerHTML = [
+    {n:AD.users.length, l:'Всего пользователей', c:'var(--blue)'},
+    {n:active, l:'Активных', c:'var(--green)'},
+    {n:AD.users.length-active, l:'Отключено', c:'var(--orange)'},
+    {n:AD.ous.length, l:'Подразделений', c:'#7c3aed'}
+  ].map(s=>`<div class="stat"><div class="num" style="color:${s.c}">${s.n}</div><div class="lbl">${s.l}</div></div>`).join('');
+  api('/api/audit').then(r => {
+    document.getElementById('recent-audit').innerHTML = r.slice(0,10).map(x=>`<div style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--blue);font-weight:600">${(x.ts||'').includes(' ') ? x.ts.split(' ')[1] : x.ts}</span> <b>${x.action}</b> — ${esc(x.target)} <span style="font-size:10px;color:var(--muted)">(${esc(x.operator)})</span></div>`).join('') || 'Нет записей';
+  });
+}
+function quickSearch(q) {
+  const query = q.toLowerCase().trim();
+  if (query.length < 2) { document.getElementById('quick-results').innerHTML=''; return; }
+  const f = AD.users.filter(u => {
+    const d = (u.displayName||'').toLowerCase();
+    const s = (u.sAMAccountName||'').toLowerCase();
+    return d.includes(query) || s.includes(query);
+  }).slice(0,10);
+  document.getElementById('quick-results').innerHTML = f.map(u=>`<div class="user-card" data-sam="${esc(u.sAMAccountName)}" onclick="openManage(this.dataset.sam)"><div class="name">${esc(u.displayName)}</div><div class="info">${esc(u.title||'')} · ${esc(u.sAMAccountName)}</div></div>`).join('');
+}
+
+// Create
+function splitFio(p) {
+  const v = document.getElementById(p+'-name').value.trim().split(/\s+/);
+  document.getElementById(p+'-sn').value = v[0]||'';
+  document.getElementById(p+'-gn').value = v[1]||'';
+  document.getElementById(p+'-pn').value = v[2]||'';
+  // Auto-generate login + CN
+  if (v[0] && p === 'c') {
+    const tr = (t)=>{ const m = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'}; return t.toLowerCase().split('').map(c=>c in m?m[c]:c).join(''); };
+    const up = s => s.replace(/^./, c => c.toUpperCase());
+    const login = (tr(v[0]) + '.' + (tr(v[1]||'')[0]||'') + (tr(v[2]||'')[0]||'')).replace(/[^a-z0-9.]/g, '');
+    const cn = [up(tr(v[0])), up(tr(v[1]||''))].filter(Boolean).join(' ');
+    document.getElementById('c-cn').value = cn;
+    document.getElementById('c-sam').value = login;
+    document.getElementById('c-mail-input').value = login + '@ahprostory.ru';
+  }
+}
+
+// Auto-format date: 01011900 → 01.01.1900
+function formatDate(el) {
+  let v = el.value.replace(/\D/g, '');
+  if (v.length >= 4) v = v.slice(0,2) + '.' + v.slice(2,4) + '.' + v.slice(4);
+  else if (v.length >= 3) v = v.slice(0,2) + '.' + v.slice(2);
+  el.value = v;
+}
+function loadOU(p) {
+  const st = document.getElementById(p+'-st').value;
+  if (!st) {
+    document.getElementById(p+'-ou').innerHTML = '<option value="">-- Выберите регион --</option>';
+    return;
+  }
+  const f = AD.ous.filter(o => {
+    const dn = o.dn.toUpperCase();
+    if (!dn.includes('OU='+st.toUpperCase())) return false;
+    // Exclude system OUs and the region itself
+    if (/(Computers|Servers|Special|Groups|Printers|Shared|NoGPO|No GPO|Disabled|External|AFGN|KMV|Don Agro|Parenthood|Admin Users|Tech Users|Users|1C|Hyper-V|Terminal|Sandbox|Temp|SQL|RDS)/i.test(dn)) return false;
+    // Must be a sub-OU (at least 4 parts: OU=XXX,OU=YYY,DC=...,DC=...)
+    const parts = dn.split(',');
+    return parts.length >= 4;
+  });
+  f.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  document.getElementById(p+'-ou').innerHTML = '<option value="">-- Выберите --</option>' + f.map(o=>{
+    const desc = o.desc ? ' — ' + esc(o.desc) : '';
+    return `<option value="${esc(o.dn)}">${esc(o.name)}${desc}</option>`;
+  }).join('');
+}
+
+// Alias: filterOU = loadOU (for manage tab compatibility)
+function filterOU(p) { return loadOU(p); }
+function genPwd() { document.getElementById('c-pwd').value = 'Agro'+Math.random().toString(36).slice(2,10)+'!'; }
+// Auto-generate password on load
+setTimeout(() => { const el = document.getElementById('c-pwd'); if (el && el.value === 'Agro') genPwd(); }, 500);
+async function createUser() {
+  const get = id => document.getElementById(id)?.value || '';
+  const d = {
+    displayName: get('c-name'), sn: get('c-sn'), givenName: get('c-gn'), patronymic: get('c-pn'),
+    sam: get('c-sam'), siteOU: get('c-ou'), title: get('c-title'),
+    company: get('c-comp'), department: get('c-dept'), st: get('c-st'),
+    l: get('c-l'), manager: get('c-mgr'),
+    telephoneNumber: get('c-work'), mobile: get('c-mob'), homePhone: get('c-pers'),
+    info: get('c-info'), office: get('c-office'), description: get('c-desc'),
+    assistant: get('c-assistant'), mail: get('c-mail-input'),
+    password: get('c-pwd'),
+    createMail: document.getElementById('c-mail-chk')?.checked || false,
+    exchDb: get('c-exch-db'),
+    addVpn: document.getElementById('c-vpn')?.checked !== false,
+    groups: Array.from(document.querySelectorAll('.c-group-chk:checked')).map(c => c.dataset.dn)
+  };
+  if (!d.displayName || !d.siteOU) return toast('ФИО и OU обязательны', false);
+  
+  // Clone detection on client side
+  const clone = AD.users.find(u => u.displayName === d.displayName);
+  if (clone) {
+    const isSameBday = clone.info && d.info && clone.info.replace(/[./]/g,'') === d.info.replace(/[./]/g,'');
+    if (isSameBday) {
+      return toast(`⚠️ Сотрудник "${d.displayName}" (${clone.info}) уже существует с логином ${clone.sAMAccountName}`, false);
+    } else {
+      if (!confirm(`Обнаружен однофамилец: ${d.displayName}\nСуществующий: ${clone.sAMAccountName} (${clone.info || 'нет даты'})\nНовый: ${d.info || 'нет даты'}\n\nЭто разные люди? Нажмите ОК, чтобы создать нового (рекомендуется сменить логин/email).`)) return;
+      // Suggest login change if not already changed
+      if (d.sam === clone.sAMAccountName) {
+        const newSam = d.sam + '1';
+        if (confirm(`Логин ${d.sam} занят. Использовать ${newSam}?`)) {
+          document.getElementById('c-sam').value = newSam;
+          document.getElementById('c-mail-input').value = newSam + '@ahprostory.ru';
+          return toast('Логин изменен. Нажмите "Создать" снова.', true);
+        }
+      }
+    }
+  }
+
+  showL(true);
+  const r = await api('/api/create-user', {method:'POST', body:JSON.stringify(d)});
+  showL(false);
+  if (r.success) {
+    const t = `Логин: ${r.login}\nПароль: ${r.password}\nEmail: ${r.email}\nФИО: ${r.displayName}\nOU: ${d.siteOU}`;
+    const b = new Blob([t],{type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = (r.login||'user')+'.txt';
+    a.click();
+    document.getElementById('create-res').innerHTML = `<div style="background:#dcfce7;padding:12px;border-radius:8px">✅ <b>${esc(r.login)}</b> создан. Пароль: <code>${r.password}</code> — файл сохранён</div>`;
+    toast('✅ Пользователь создан, файл скачан', true);
+    loadData(); loadDash();
+  } else {
+    document.getElementById('create-res').innerHTML = `<div style="background:#fee2e2;padding:12px;border-radius:8px">❌ ${esc(r.error||'Ошибка')}</div>`;
+    toast(r.error||'Ошибка создания', false);
+  }
+}
+
+// Manage
+function search() {
+  const q = document.getElementById('u-search').value.toLowerCase().trim(); if (q.length<2) return;
+  const f = AD.users.filter(u => {
+    const d = (u.displayName||'').toLowerCase();
+    const s = (u.sAMAccountName||'').toLowerCase();
+    const t = (u.title||'').toLowerCase();
+    const m = (u.mail||'').toLowerCase();
+    return d.includes(q) || s.includes(q) || t.includes(q) || m.includes(q);
+  }).slice(0,30);
+  document.getElementById('u-results').innerHTML = f.map(u=>`<div class="user-card" data-sam="${esc(u.sAMAccountName)}" onclick="openManage(this.dataset.sam)"><div class="name">${esc(u.displayName)}</div><div class="info">${esc(u.title||'')} · ${esc(u.sAMAccountName)}</div></div>`).join('');
+}
+function openManage(sam) {
+  const u = AD.users.find(x=>x.sAMAccountName===sam); if(!u) return;
+  currentDn = u.dn; u_current_sam = sam; if(!currentDn){toast("Пользователь без DN","err");return;}
+  
+  const userGroups = (Array.isArray(u.memberOf) ? u.memberOf : [u.memberOf]).filter(Boolean).map(g => g.split(',')[0].replace('CN=', ''));
+  const allGroups = (AD.groups || []).map(g => ({...g, name: g.name || g.dn.split(',')[0].replace('CN=', '')}));
+  
+  const groupsHtml = allGroups.map(g => {
+    const isMember = (u.memberOf || "").includes(g.dn);
+    return `<label class="group-item" title="${esc(g.dn)}">
+      <input type="checkbox" class="m-group-chk" data-dn="${esc(g.dn)}" ${isMember ? 'checked' : ''}>
+      <span>${esc(g.name)}</span>
+    </label>`;
+  }).join('');
+
+  const isActive = !((Number(u.userAccountControl||0) & 2));
+  const mgrName = (AD.users.find(x=>x.dn===u.manager)||{}).displayName||u.manager||'';
+  const bday = (u.info||'').replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3');
+  
+  // Build OU options for move — show sub-OUs with descriptions
+  let ouOpts = '<option value="">— Без перемещения —</option>';
+  AD.ous.forEach(o => {
+    const dn = o.dn.toUpperCase();
+    // Include sub-OUs (not top-level regions), exclude system OUs
+    if (/(Computers|Servers|Special|Groups|Printers|Shared|NoGPO|No GPO|Disabled|External|AFGN|KMV|Don Agro|Parenthood)/i.test(dn)) return;
+    const parts = dn.split(',');
+    if (parts.length < 3) return; // Skip top-level (OU=XXX,DC=...)
+    ouOpts += `<option value="${esc(o.dn)}">${esc(o.name||'OU')}${o.desc?' — '+esc(o.desc):''}</option>`;
+  });
+  
+  document.getElementById('m-form').style.display='block';
+  document.getElementById('m-form').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="display:flex; gap:10px; align-items:center">
+        <h3>${esc(u.displayName)}</h3>
+        <div class="fg" style="margin:0"><input id="m-sam" value="${esc(u.sAMAccountName)}" readonly style="background:#f8fafc; color:var(--muted); font-family:monospace; width:120px; padding:4px 8px; border-style:dashed"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="badge ${isActive?'bg-new':'bg-diff'}" style="font-size:12px;padding:4px 10px">${isActive?'АКТИВЕН':'ОТКЛЮЧЕН'}</span>
+        <button class="btn ${isActive?'btn-o':'btn-s'} btn-sm" onclick="toggleUser('${esc(u.dn)}',${!isActive}, '${esc(u.sAMAccountName)}')">${isActive?'🔴 Отключить':'🟢 Включить'}</button>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-o btn-sm" onclick="reassignSubordinates('${esc(u.sAMAccountName)}','${esc(u.displayName)}')">👥 Переподчинить подчинённых</button>
+      <span style="font-size:11px;color:var(--muted)">→ к руководителю этого сотрудника</span>
+      <button class="btn btn-p btn-sm" onclick="gatherDepartment('${esc(u.sAMAccountName)}','${esc(u.displayName)}','${esc(u.department||'')}')">🔄 Собрать отдел</button>
+      <span style="font-size:11px;color:var(--muted)">→ подчинить сотрудников отдела этому руководителю</span>
+    </div>
+    <div class="row">
+      <div class="fg"><label>ФИО</label><input id="m-name" value="${esc(u.displayName||'')}" oninput="mSplitFio()"></div>
+      <div class="fg"><label>Email</label><input id="m-mail" value="${esc(u.mail||'')}"></div>
+      <div class="fg"><label>База Exchange</label>
+        <select id="m-exch-db" style="font-size:11px">${Object.keys(AD.dbStats||{}).sort().map(db=>`<option value="${db}" ${ (u.homeMDB||"").includes(db) ? 'selected':'' }>${db} (${AD.dbStats[db]} юз.)</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>CN (Common Name)</label><input id="m-cn" value="${esc(u.cn || (u.dn||'').split(',')[0].replace(/^CN=/i,''))}" readonly style="background:#f8fafc; color:var(--muted); font-family:monospace"></div>
+      <div class="fg"><label>Фамилия (extensionAttribute1)</label><input id="m-sn" value="${esc(u.extensionAttribute1||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Имя (extensionAttribute2)</label><input id="m-gn" value="${esc(u.extensionAttribute2||'')}"></div>
+      <div class="fg"><label>Отчество (extensionAttribute3)</label><input id="m-pn" value="${esc(u.extensionAttribute3||'')}"></div>
+      <div class="fg"><label>Логин</label><input value="${esc(u.sAMAccountName||'')}" readonly style="background:#f8fafc;color:var(--muted);font-family:monospace"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Должность</label><input id="m-title" list="titles" value="${esc(u.title||'')}"></div>
+      <div class="fg"><label>Дата рождения</label><input id="m-info" value="${esc(bday)}" placeholder="ДД.ММ.ГГГГ" oninput="formatDate(this)"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Отдел</label><input id="m-dept" list="depts" value="${esc(u.department||'')}"></div>
+      <div class="fg"><label>Компания</label><input id="m-comp" list="comps" value="${esc(u.company||'')}"></div>
+      <div class="fg"><label>Город</label><input id="m-l" list="locs" value="${esc(u.l||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Руководитель</label><input id="m-mgr" list="mgrs" value="${esc(mgrName)}"></div>
+      <div class="fg"><label>Описание</label><input id="m-desc" list="descs" value="${esc(u.description||'')}"></div>
+      <div class="fg"><label>Привязки</label><input id="m-assistant" list="assts" value="${esc(u.assistant||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Адрес (Office)</label><input id="m-office" list="offices" value="${esc(u.physicalDeliveryOfficeName||'')}"></div>
+      <div class="fg"><label>Рабочий тел.</label><input id="m-work" value="${esc(u.telephoneNumber||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Мобильный</label><input id="m-mob" value="${esc(u.mobile||'')}"></div>
+      <div class="fg"><label>Личный тел.</label><input id="m-pers" value="${esc(u.homePhone||'')}"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="fg"><label>Регион (st)</label><select id="m-st" onchange="filterOU('m')"><option value="">—</option>${Object.entries(REGION_NAMES).sort((a,b)=>a[1].localeCompare(b[1])).map(([k,v])=>`<option value="${k}" ${u.st===k?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="fg"><label style="color:var(--orange);font-weight:600">🎯 Перевести в OU</label><select id="m-ou" style="border:2px solid var(--orange)">${ouOpts}</select></div>
+    </div>
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px">
+      <label style="font-weight:600; margin-bottom:8px; display:block">🏢 Группы безопасности (AD Groups)</label>
+      <div class="search-box" style="margin-bottom:8px">
+        <input type="text" placeholder="Поиск групп..." oninput="filterEditGroups(this.value)" style="padding:6px 12px; font-size:12px">
+      </div>
+      <div class="group-list" id="m-group-list">
+        ${groupsHtml}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-s" style="flex:1" onclick="saveUser()">💾 Сохранить изменения</button>
+    </div>`;
+  
+  // Trigger OU filter for current region
+  if (u.st) setTimeout(() => filterOU('m'), 100);
+}
+
+function filterCreateGroups(q) {
+  const items = document.querySelectorAll('.create-group-item');
+  items.forEach(it => {
+    const text = it.textContent.toLowerCase();
+    it.style.display = text.includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+function filterEditGroups(q) {
+  const items = document.querySelectorAll('.group-item');
+  items.forEach(it => {
+    const text = it.textContent.toLowerCase();
+    it.style.display = text.includes(q.toLowerCase()) ? 'flex' : 'none';
+  });
+}
+
+function mSplitFio() {
+  const v = document.getElementById('m-name').value.trim().split(/\s+/);
+  if (!document.getElementById('m-sn').value) document.getElementById('m-sn').value = v[0]||'';
+  if (!document.getElementById('m-gn').value) document.getElementById('m-gn').value = v[1]||'';
+  if (!document.getElementById('m-pn').value) document.getElementById('m-pn').value = v[2]||'';
+}
+
+async function toggleUser(dn, enable, sam) {
+  showL(true);
+  const r = await api('/api/toggle-user', {method:'POST', body:JSON.stringify({dn, enable, sam})});
+  showL(false);
+  if (r.success) {
+    toast(enable ? '✅ Пользователь включён' : '🔴 Пользователь отключён', true);
+    loadData();
+  } else toast(r.error, false);
+}
+async function saveUser() {
+  const u = AD.users.find(x => x.dn === currentDn);
+  const currentGroups = (u?.memberOf || "");
+  const selectedGroups = Array.from(document.querySelectorAll('.m-group-chk:checked')).map(c => c.dataset.dn);
+  const allGroupCheckboxes = Array.from(document.querySelectorAll('.m-group-chk')).map(c => c.dataset.dn);
+  
+  const toAdd = selectedGroups.filter(g => !currentGroups.includes(g));
+  const toRemove = allGroupCheckboxes.filter(g => currentGroups.includes(g) && !selectedGroups.includes(g));
+
+  const d = {
+    displayName: document.getElementById('m-name').value,
+    sn: document.getElementById('m-sn').value,
+    givenName: document.getElementById('m-gn').value,
+    patronymic: document.getElementById('m-pn').value,
+    title: document.getElementById('m-title').value,
+    company: document.getElementById('m-comp').value,
+    department: document.getElementById('m-dept').value,
+    l: document.getElementById('m-l').value,
+    telephoneNumber: document.getElementById('m-work').value,
+    mobile: document.getElementById('m-mob').value,
+    homePhone: document.getElementById('m-pers').value,
+    mail: document.getElementById('m-mail').value,
+    manager: document.getElementById('m-mgr').value,
+    description: document.getElementById('m-desc').value,
+    assistant: document.getElementById('m-assistant').value,
+    office: document.getElementById('m-office').value,
+    info: document.getElementById('m-info').value,
+    st: document.getElementById('m-st').value,
+    exchDb: document.getElementById('m-exch-db').value,
+    newOU: document.getElementById('m-ou').value
+  };
+  
+  showL(true, 'Сохранение изменений...');
+  try {
+    const r = await api('/api/save-user', {method:'POST', body:JSON.stringify({dn:currentDn, data:d})});
+    if (!r.success) throw new Error(r.error || 'Ошибка сохранения');
+
+    // Handle Group changes
+    if (toAdd.length > 0 || toRemove.length > 0) {
+      const total = toAdd.length + toRemove.length;
+      let count = 0;
+      for (const gdn of toAdd) {
+        count++;
+        showL(true, `Добавление в группы (${count}/${total})...`, Math.round((count/total)*100));
+        await api('/api/group-add', {method:'POST', body:JSON.stringify({userDn:currentDn, groupDn:gdn})});
+      }
+      for (const gdn of toRemove) {
+        count++;
+        showL(true, `Удаление из групп (${count}/${total})...`, Math.round((count/total)*100));
+        await api('/api/group-remove', {method:'POST', body:JSON.stringify({userDn:currentDn, groupDn:gdn})});
+      }
+    }
+
+    toast('✅ Успешно сохранено', true);
+    await loadData();
+    openManage(u_current_sam);
+  } catch(e) {
+    toast(e.message, false);
+  }
+  showL(false);
+}
+
+
+// Import
+async function compareCsv() {
+  const file = document.getElementById('csv-file').files[0]; if (!file) return;
+  showL(true);
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const b64 = btoa(new Uint8Array(e.target.result).reduce((d,b)=>d+String.fromCharCode(b),''));
+      const r = await fetch('/api/compare-csv', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({csvData:b64, isBase64:true})}).then(r=>r.json());
+      showL(false);
+      
+      if (!r.success) return toast(r.error, false);
+      console.log("CSV Results:", r.results);
+      batchData = r.results;
+      
+      const types = {new:[], diff:[], same:[]};
+      r.results.forEach(x => types[x.type||'same'].push(x));
+      
+      let ouRegionOpts = '<option value="">— Выберите регион —</option>';
+      Object.entries(REGION_NAMES).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([k,v]) => { 
+        ouRegionOpts += `<option value="${k}">${esc(v)}</option>`; 
+      });
+      
+      const ousByRegion = {};
+      AD.ous.forEach(o => {
+        const dn = o.dn.toUpperCase();
+        const parts = dn.split(',');
+        if (parts.length < 4) return;
+        if (/(Computers|Servers|Special|Groups|Printers|Shared|NoGPO|No GPO|Disabled|External|AFGN|KMV|Don Agro|Parenthood|Users|1C|Hyper|Terminal|Sandbox|SQL)/i.test(dn)) return;
+        let reg = 'OTHER';
+        for (const code of Object.keys(REGION_NAMES)) {
+          if (dn.includes('OU='+code.toUpperCase())) { reg = code; break; }
+        }
+        if (reg === 'OTHER') return;
+        if (!ousByRegion[reg]) ousByRegion[reg] = [];
+        ousByRegion[reg].push(o);
+      });
+      
+      document.getElementById('csv-results').innerHTML = `
+        <div class="card">
+          <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+            <span class="badge bg-new">${types.new.length} новых</span>
+            <span class="badge bg-diff">${types.diff.length} изменено</span>
+            <span class="badge bg-same">${types.same.length} без изменений</span>
+            ${r.stats.duplicates > 0 ? `<span class="badge" style="background:#fef3c7;color:#92400e">⚠️ ${r.stats.duplicates} дубликатов</span>` : ''}
+            <span style="font-size:11px;color:var(--muted);margin-left:auto">⚠️ Для новых без OU — выберите подразделение в таблице</span>
+          </div>
+          <button class="btn btn-s" onclick="applyBatch()">✅ Применить выбранное</button>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table>
+            <tr><th></th><th>Статус</th><th>ФИО</th><th>Логин</th><th>Изменения / Выбор OU</th></tr>
+            ${r.results.map((x,i)=>{
+              if (x.type === 'same') return '';
+              return `
+            <tr${x.duplicate ? ' style="background:#fffbeb;border-left:3px solid #f59e0b"' : ''}>
+              <td><input type="checkbox" checked data-idx="${i}" class="batch-chk"></td>
+              <td><span class="badge ${x.type==='new' ? (AD.users.some(u=>u.displayName===x.incoming.displayName)?'bg-clone':'bg-new') : 'bg-diff'}">${x.type==='new' ? (AD.users.some(u=>u.displayName===x.incoming.displayName)?'КЛОН (НОВЫЙ)':'НОВЫЙ') : 'ИЗМЕНЁН'}${x.duplicate ? ' 🔁' : ''}</span>${x.incoming.hrEvent ? ` <span class="badge" style="background:#dbeafe;color:#1e40af;margin-left:4px">${esc(x.incoming.hrEvent)}</span>` : ''}</td>
+              <td><b>${esc(x.incoming.displayName||'?')}</b></td>
+              <td>${esc(x.incoming.sam||'авто')}</td>
+              <td>${(function(){
+                if (x.type==='diff') {
+                  return Object.entries(x.diffs||{}).map(([k,v])=>`<div class="diff-row"><span style="color:var(--muted);font-weight:600">${ATTR_NAMES[k]||k}:</span> <span class="diff-old">${esc(v.old)}</span> → <span class="diff-new">${esc(v.new)}</span></div>`).join('');
+                }
+                if (x.type==='new') {
+                  const inc = x.incoming;
+                  const autoOU = inc.siteOU || '';
+                  let autoReg = '';
+                  if (autoOU) {
+                    const parts = autoOU.toUpperCase().split(',');
+                    for (const p of parts) {
+                      const code = p.trim().replace('OU=','');
+                      if (REGION_NAMES[code]) { autoReg = code; break; }
+                    }
+                  }
+                  const fields = [
+                    ['CN', inc.cn||''], ['Фамилия', inc.sn], ['Имя', inc.givenName], ['Отчество', inc.patronymic],
+                    ['ФИО', inc.displayName], ['Логин', inc.sam||'авто'], ['Email', inc.mail||(inc.sam?inc.sam+'@ahprostory.ru':'')],
+                    ['Должность', inc.title], ['Компания', inc.company], ['Отдел', inc.department], ['Регион', inc.st], ['Город', inc.l]
+                  ].filter(([_,v]) => v);
+                  return `<div style="font-size:11px;line-height:1.6;margin-bottom:8px">
+                    ${fields.map(([k,v])=>`<div><span style="color:var(--muted)">${k}:</span> <b>${esc(v)}</b></div>`).join('')}
+                    <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+                      <select class="ou-region-sel" data-idx="${i}" onchange="filterImportOU(this)" style="padding:3px 5px;border:1px solid var(--border);border-radius:4px;font-size:11px">
+                        <option value="">— Регион —</option>
+                        ${Object.entries(REGION_NAMES).sort((a,b)=>a[1].localeCompare(b[1])).map(([k,v])=>`<option value="${k}" ${k===autoReg?'selected':''}>${esc(v)}</option>`).join('')}
+                      </select>
+                      <select class="ou-select" data-idx="${i}" style="padding:3px 5px;border:2px solid var(--orange);border-radius:4px;font-size:11px;min-width:180px">
+                        <option value="">— Подразделение —</option>
+                        ${autoOU ? `<option value="${esc(autoOU)}" selected>✅ ${esc(autoOU.substring(0,45))}</option>` : ''}
+                      </select>
+                    </div>
+                  </div>`;
+                }
+                return '';
+              })()}
+              </td>
+            </tr>`; }).join('')}</table>
+        </div>`;
+      
+      window._ousByRegion = ousByRegion;
+    } catch(e) {
+      showL(false);
+      toast("Ошибка при обработке файла: " + e.message, false);
+      console.error(e);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function exportCsv(filter) {
+  window.location.href = '/api/export-csv?filter=' + filter;
+}
+
+// ─── Structure (XLSX) ────────────────────────────────────────────
+let structData = [];
+
+async function uploadXlsx() {
+  const file = document.getElementById('xlsx-file').files[0];
+  if (!file) return;
+  document.getElementById('struct-table').innerHTML = 'Загрузка...';
+  showL(true, 'Загрузка XLSX...', 0);
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(reader.result)));
+    try {
+      await api('/api/xlsx-upload', { method: 'POST', body: JSON.stringify({ data: base64, isBase64: true }) });
+      showL(false);
+      toast('✅ XLSX загружен', true);
+      loadStruct();
+    } catch(e) {
+      showL(false);
+      toast('❌ ' + e.message, false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function loadStruct() {
+  document.getElementById('struct-table').innerHTML = '<div class="spin"></div> Загрузка...';
+  try {
+    const r = await api('/api/xlsx-view');
+    structData = r.rows;
+    const diffs = structData.filter(x => x.hasDiff);
+    const total = structData.length;
+    
+    const pageSize = 500;
+    let page = 0;
+    window._structDiffs = diffs;
+    window._renderStructPage = (p) => {
+      page = p;
+      const chunk = diffs.slice(p * pageSize, (p + 1) * pageSize);
+      const totalPages = Math.ceil(diffs.length / pageSize);
+      
+      let h = `<p style="margin-bottom:12px"><b>${total}</b> записей, <b style="color:var(--orange)">${diffs.length}</b> с расхождениями`;
+      if (totalPages > 1) h += ` | стр. ${p+1}/${totalPages}`;
+      h += `</p>`;
+      
+      if (totalPages > 1) {
+        h += `<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">`;
+        for (let i = 0; i < totalPages; i++) {
+          h += `<button class="btn btn-sm ${i===p?'btn-p':'btn-g'}" onclick="window._renderStructPage(${i})">${i+1}</button>`;
+        }
+        h += `</div>`;
+      }
+      
+      h += `<div style="max-height:600px;overflow:auto"><table>`;
+      h += `<tr><th><input type="checkbox" onchange="document.querySelectorAll('.struct-chk').forEach(c=>c.checked=this.checked)"></th><th>Кадровое событие</th><th>Логин</th><th>ФИО (AD)</th><th>Расхождения</th><th>Действия</th></tr>`;
+      
+      for (const x of chunk) {
+        const isNew = x.isNew;
+        const flds = x._fields || {};
+        const diffEntries = isNew ? [] : Object.entries(x.diffs);
+        let diffStr;
+        let dataAttrs;
+        let hasMgr, hasTitle, hasDept, hasDisplayName, hasCompany, hasMail;
+        
+        if (isNew) {
+          // Новый пользователь — показываем все поля из XLSX
+          const rows = [];
+          if (flds.title) rows.push(`<div><b>Должность:</b> ${esc(flds.title)}</div>`);
+          if (flds.department) rows.push(`<div><b>Отдел:</b> ${esc(flds.department)}</div>`);
+          if (flds.company) rows.push(`<div><b>Компания:</b> ${esc(flds.company)}</div>`);
+          if (flds.region) rows.push(`<div><b>Регион:</b> ${esc(flds.region)}</div>`);
+          if (flds.city) rows.push(`<div><b>Город:</b> ${esc(flds.city)}</div>`);
+          if (flds.email) rows.push(`<div><b>Email:</b> ${esc(flds.email)}</div>`);
+          if (flds.phone) rows.push(`<div><b>Тел:</b> ${esc(flds.phone)}</div>`);
+          if (flds.manager) rows.push(`<div><b>Руководитель:</b> ${esc(flds.manager)}</div>`);
+          diffStr = `<span class="badge bg-new" style="margin-bottom:4px">НОВЫЙ</span>${rows.join('')}`;
+          
+          // data-атрибуты из _fields
+          dataAttrs = `data-login="${esc(x.login)}" data-hrevent="${esc(x.hrevent || '')}"`;
+          dataAttrs += ` data-displayname="${esc(x.fio)}"`;
+          if (flds.title) dataAttrs += ` data-title="${esc(flds.title)}"`;
+          if (flds.department) dataAttrs += ` data-department="${esc(flds.department)}"`;
+          if (flds.company) dataAttrs += ` data-company="${esc(flds.company)}"`;
+          if (flds.region) dataAttrs += ` data-st="${esc(flds.region)}"`;
+          if (flds.city) dataAttrs += ` data-l="${esc(flds.city)}"`;
+          if (flds.email) dataAttrs += ` data-mail="${esc(flds.email)}"`;
+          if (flds.phone) dataAttrs += ` data-telephoneNumber="${esc(flds.phone)}"`;
+          if (flds.mobile) dataAttrs += ` data-mobile="${esc(flds.mobile)}"`;
+          if (flds.info) dataAttrs += ` data-info="${esc(flds.info)}"`;
+          if (flds.desc) dataAttrs += ` data-description="${esc(flds.desc)}"`;
+          if (flds.addr) dataAttrs += ` data-physicalDeliveryOfficeName="${esc(flds.addr)}"`;
+          if (flds.manager) dataAttrs += ` data-manager="${esc(flds.manager)}"`;
+          if (flds.sn) dataAttrs += ` data-sn="${esc(flds.sn)}"`;
+          if (flds.gn) dataAttrs += ` data-gn="${esc(flds.gn)}"`;
+          if (flds.pn) dataAttrs += ` data-pn="${esc(flds.pn)}"`;
+          
+          hasMgr = !!flds.manager;
+          hasTitle = !!flds.title;
+          hasDept = !!flds.department;
+          hasDisplayName = !!x.fio;
+          hasCompany = !!flds.company;
+          hasMail = !!flds.email;
+        } else {
+          diffStr = diffEntries.map(([attr, d]) => 
+            `<div style="margin:2px 0"><b>${d.label}:</b> <span style="color:var(--muted);text-decoration:line-through">${esc(d.ad)}</span> → <span style="color:var(--green);font-weight:600">${esc(d.xlsx)}</span></div>`
+          ).join('');
+          
+          dataAttrs = `data-login="${esc(x.login)}" data-hrevent="${esc(x.hrevent || '')}"`;
+          for (const [attr, d] of diffEntries) {
+            dataAttrs += ` data-${attr}="${esc(d.xlsx)}"`;
+          }
+          
+          hasMgr = diffEntries.some(([a]) => a === 'manager');
+          hasTitle = diffEntries.some(([a]) => a === 'title');
+          hasDept = diffEntries.some(([a]) => a === 'department');
+          hasDisplayName = diffEntries.some(([a]) => a === 'displayName');
+          hasCompany = diffEntries.some(([a]) => a === 'company');
+          hasMail = diffEntries.some(([a]) => a === 'mail');
+        }
+        
+        const hrevent = x.hrevent || '';
+        const loginEsc = esc(x.login);
+        const fioEsc = esc(x.adFio||x.fio);
+        
+        // Build per-diff action buttons
+        let actionBtns = '';
+        const totalDiffs = isNew ? 1 : diffEntries.filter(([a]) => !a.startsWith('_')).length;
+        
+        if (totalDiffs >= 1 || isNew) {
+          actionBtns += `<button class="btn btn-s btn-sm" title="Применить ВСЕ изменения для ${fioEsc}" onclick="applyOneStructRow(this)" style="font-size:10px;padding:2px 6px">✅ Всё</button> `;
+        }
+        if (hasMgr) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить руководителя: ${esc(flds.manager || '')}" onclick="applyOneStructField(this,'manager')" style="font-size:10px;padding:2px 6px">👔 Рук.</button> `;
+        }
+        if (hasTitle) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить должность" onclick="applyOneStructField(this,'title')" style="font-size:10px;padding:2px 6px">💼 Долж.</button> `;
+        }
+        if (hasDept) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить отдел" onclick="applyOneStructField(this,'department')" style="font-size:10px;padding:2px 6px">🏢 Отд.</button> `;
+        }
+        if (hasDisplayName) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить ФИО" onclick="applyOneStructField(this,'displayName')" style="font-size:10px;padding:2px 6px">✏️ ФИО</button> `;
+        }
+        if (hasCompany) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить компанию" onclick="applyOneStructField(this,'company')" style="font-size:10px;padding:2px 6px">🏭 Комп.</button> `;
+        }
+        if (hasMail) {
+          actionBtns += `<button class="btn btn-p btn-sm" title="Обновить Email" onclick="applyOneStructField(this,'mail')" style="font-size:10px;padding:2px 6px">📧 Mail</button> `;
+        }
+        actionBtns += `<button class="btn btn-o btn-sm" title="Переподчинить подчинённых сотрудника «${fioEsc}» вышестоящему руководителю" onclick="reassignSubordinates('${loginEsc}','${fioEsc}')" style="font-size:10px;padding:2px 6px">👥 Переподч.</button>`;
+        
+        h += `<tr style="background:#fffbeb">
+          <td><input type="checkbox" class="struct-chk" ${dataAttrs} checked></td>
+          <td>${hrevent ? `<span class="badge" style="background:#dbeafe;color:#1e40af;font-size:10px">${esc(hrevent)}</span>` : ''}</td>
+          <td>${loginEsc}</td>
+          <td>${fioEsc}</td>
+          <td style="font-size:12px">${diffStr}</td>
+          <td><div style="display:flex;gap:3px;flex-wrap:wrap">${actionBtns}</div></td>
+        </tr>`;
+      }
+      h += `</table></div>`;
+      document.getElementById('struct-table').innerHTML = h;
+    };
+    window._renderStructPage(0);
+  } catch(e) {
+    document.getElementById('struct-table').innerHTML = `<span style="color:var(--red)">Ошибка: ${e.message}</span>`;
+  }
+}
+
+async function applyStruct() {
+  const checks = document.querySelectorAll('.struct-chk:checked');
+  if (!checks.length) return toast('Нет выбранных записей', false);
+  if (!confirm(`Применить изменения для ${checks.length} пользователей?`)) return;
+  
+  const items = Array.from(checks).map(cb => ({
+    login: cb.dataset.login,
+    dept: cb.dataset.department || '',
+    title: cb.dataset.title || '',
+    manager: cb.dataset.manager || '',
+    fio: cb.dataset.displayname || '',
+    company: cb.dataset.company || '',
+    region: cb.dataset.st || '',
+    city: cb.dataset.l || '',
+    email: cb.dataset.mail || '',
+    phone: cb.dataset.telephoneNumber || '',
+    mobile: cb.dataset.mobile || '',
+    birthday: cb.dataset.info || '',
+    desc: cb.dataset.description || '',
+    addr: cb.dataset.physicalDeliveryOfficeName || '',
+    hrevent: cb.dataset.hrevent || ''
+  }));
+  
+  showL(true, `Применение ${items.length} изменений...`, 0);
+  try {
+    const r = await api('/api/xlsx-apply', { method: 'POST', body: JSON.stringify({ items }) });
+    showL(false);
+    toast(`✅ Успешно: ${r.success} | ❌ Ошибок: ${r.failed}`, r.failed === 0);
+    await loadData(); // refresh AD cache
+    loadStruct();
+  } catch(e) {
+    showL(false);
+    toast('❌ ' + e.message, false);
+  }
+}
+
+// ─── Per-row struct apply ─────────────────────────────────────────
+function getStructItem(btn) {
+  const tr = btn.closest('tr');
+  const cb = tr.querySelector('.struct-chk');
+  if (!cb) return null;
+  return {
+    login: cb.dataset.login || '',
+    dept: cb.dataset.department || '',
+    title: cb.dataset.title || '',
+    manager: cb.dataset.manager || '',
+    fio: cb.dataset.displayname || '',
+    company: cb.dataset.company || '',
+    region: cb.dataset.st || '',
+    city: cb.dataset.l || '',
+    email: cb.dataset.mail || '',
+    phone: cb.dataset.telephoneNumber || '',
+    mobile: cb.dataset.mobile || '',
+    birthday: cb.dataset.info || '',
+    desc: cb.dataset.description || '',
+    addr: cb.dataset.physicalDeliveryOfficeName || '',
+    hrevent: cb.dataset.hrevent || ''
+  };
+}
+
+async function applyOneStructItem(item, btn, label) {
+  if (!item || !item.login) return toast('Не найден логин', false);
+  if (!confirm(`Применить изменения для ${item.login}${label ? ' (' + label + ')' : ''}?`)) return;
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '...';
+  showL(true, `Применение для ${item.login}...`);
+  try {
+    const r = await api('/api/xlsx-apply', { method: 'POST', body: JSON.stringify({ items: [item] }) });
+    showL(false);
+    if (r.failed === 0) {
+      toast(`✅ ${item.login} обновлён`, true);
+      await loadData();
+      loadStruct();
+    } else {
+      toast(`❌ ${item.login}: ошибка`, false);
+    }
+  } catch(e) {
+    showL(false);
+    toast('❌ ' + e.message, false);
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+}
+
+// Применить ВСЕ изменения строки
+function applyOneStructRow(btn) {
+  const item = getStructItem(btn);
+  applyOneStructItem(item, btn, 'все поля');
+}
+
+// Применить одно поле
+function applyOneStructField(btn, field) {
+  const tr = btn.closest('tr');
+  const cb = tr.querySelector('.struct-chk');
+  if (!cb) return toast('Не найдены данные строки', false);
+  
+  const item = { login: cb.dataset.login || '' };
+  const fieldDataMap = {
+    manager: { key: 'manager', val: cb.dataset.manager || '', label: 'руководитель' },
+    title: { key: 'title', val: cb.dataset.title || '', label: 'должность' },
+    department: { key: 'dept', val: cb.dataset.department || '', label: 'отдел' },
+    displayName: { key: 'fio', val: cb.dataset.displayname || '', label: 'ФИО' },
+    company: { key: 'company', val: cb.dataset.company || '', label: 'компания' },
+    mail: { key: 'email', val: cb.dataset.mail || '', label: 'Email' },
+  };
+  
+  const fd = fieldDataMap[field];
+  if (!fd) return toast('Неизвестное поле: ' + field, false);
+  if (!fd.val) return toast(`Нет значения для поля ${fd.label}`, false);
+  
+  item[fd.key] = fd.val;
+  if (field === 'displayName') item.hrevent = 'Смена фамилии';
+  
+  applyOneStructItem(item, btn, fd.label);
+}
+
+async function reassignSubordinates(sam, displayName) {
+  // Find subordinates in cache
+  const subs = AD.users.filter(u => {
+    const mgr = (u.manager || '').toLowerCase();
+    const selfDN = AD.users.find(x => x.sAMAccountName === sam)?.dn?.toLowerCase() || '';
+    return mgr === selfDN || mgr.includes('cn=' + sam.toLowerCase() + ',');
+  });
+  
+  if (!subs.length) return toast(`У ${displayName} нет подчинённых`, false);
+  
+  // Find skip-level manager
+  const self = AD.users.find(u => u.sAMAccountName === sam);
+  const skipMgrDN = self?.manager || '';
+  const skipMgr = skipMgrDN ? AD.users.find(u => u.dn?.toLowerCase() === skipMgrDN.toLowerCase()) : null;
+  const skipName = skipMgr?.displayName || 'никто (останется пустым)';
+  
+  if (!confirm(`Переподчинить ${subs.length} подчинённых сотрудника «${displayName}» → «${skipName}»?`)) return;
+  
+  showL(true, `Переподчинение ${subs.length} сотрудников...`, 0);
+  const actions = subs.map(u => ({
+    type: 'update',
+    dn: u.dn,
+    data: { manager: skipMgrDN || '', displayName: u.displayName }
+  }));
+  
+  try {
+    const r = await api('/api/apply-batch', { method: 'POST', body: JSON.stringify({ actions }) });
+    showL(false);
+    toast(`✅ Переподчинено: ${r.success}`, true);
+    loadData();
+  } catch(e) {
+    showL(false);
+    toast('❌ Ошибка: ' + e.message, false);
+  }
+}
+
+// Собрать сотрудников отдела под этого руководителя
+async function gatherDepartment(sam, displayName, department) {
+  if (!department) return toast('У сотрудника не указан отдел', false);
+  
+  // Нормализуем отдел (обрезаем до 64, аббревиатуры)
+  const deptNorm = department.toLowerCase().substring(0, 64);
+  
+  const self = AD.users.find(u => u.sAMAccountName === sam);
+  if (!self) return toast('Сотрудник не найден', false);
+  
+  // Ищем сотрудников в том же отделе, у которых другой руководитель
+  const subs = AD.users.filter(u => {
+    if (u.sAMAccountName === sam) return false;
+    const uDept = (u.department || '').toLowerCase().substring(0, 64);
+    if (uDept !== deptNorm) return false;
+    const mgr = (u.manager || '').toLowerCase();
+    if (mgr === (self.dn || '').toLowerCase()) return false; // уже подчиняется
+    return true;
+  });
+  
+  if (!subs.length) return toast(`В отделе «${department}» нет сотрудников для переподчинения`, false);
+  
+  if (!confirm(`Переподчинить ${subs.length} сотрудников отдела «${department}» → «${displayName}»?`)) return;
+  
+  showL(true, `Переподчинение ${subs.length} сотрудников...`, 0);
+  const actions = subs.map(u => ({
+    type: 'update',
+    dn: u.dn,
+    data: { manager: self.dn || '', displayName: u.displayName }
+  }));
+  
+  try {
+    const r = await api('/api/apply-batch', { method: 'POST', body: JSON.stringify({ actions }) });
+    showL(false);
+    toast(`✅ Переподчинено: ${r.success}`, true);
+    loadData();
+  } catch(e) {
+    showL(false);
+    toast('❌ Ошибка: ' + e.message, false);
+  }
+}
+
+// Cascade OU filter for import (Region → Subdivision)
+function filterImportOU(regionSel) {
+  const idx = regionSel.dataset.idx;
+  const region = regionSel.value;
+  const ouSel = document.querySelector(`.ou-select[data-idx="${idx}"]`);
+  if (!ouSel) return;
+  
+  let opts = '<option value="">— Выберите подразделение —</option>';
+  const ous = (region && window._ousByRegion && window._ousByRegion[region]) ? window._ousByRegion[region] : [];
+  // Sort by name
+  ous.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  ous.forEach(o => {
+    const desc = o.desc ? ' — ' + esc(o.desc) : '';
+    opts += `<option value="${esc(o.dn)}">${esc(o.name||'OU')}${desc}</option>`;
+  });
+  // Also add "Other" region
+  if (region === 'OTHER' || !ous.length) {
+    const other = (window._ousByRegion && window._ousByRegion['OTHER']) || [];
+    other.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    other.forEach(o => {
+      const desc = o.desc ? ' — ' + esc(o.desc) : '';
+      opts += `<option value="${esc(o.dn)}">${esc(o.name||'OU')}${desc}</option>`;
+    });
+  }
+  ouSel.innerHTML = opts;
+}
+async function applyBatch() {
+  const chks = document.querySelectorAll('.batch-chk:checked');
+  const allActions = Array.from(chks).map(c => {
+    const item = batchData[parseInt(c.dataset.idx)];
+    if (!item) return null;
+    if (item.type === 'new') {
+      const sel = document.querySelector(`.ou-select[data-idx="${c.dataset.idx}"]`);
+      const data = { ...item.incoming };
+      if (sel && sel.value) data.siteOU = sel.value;
+      if (!data.siteOU) return null;
+      return { type: 'create', data };
+    }
+    return { type: 'update', dn: item.existing?.dn, data: item.incoming };
+  }).filter(Boolean);
+  
+  if (!allActions.length) return toast('Ничего не выбрано или не указан OU', false);
+  
+  const chunkSize = 50;
+  let success = 0, failed = 0, total = allActions.length, errors = [];
+  
+  showL(true, `Запуск импорта: ${total} записей...`, 0);
+  
+  for (let i = 0; i < allActions.length; i += chunkSize) {
+    const chunk = allActions.slice(i, i + chunkSize);
+    const p = Math.round((i / total) * 100);
+    showL(true, `Импорт: ${i} из ${total}...`, p);
+    
+    try {
+      const r = await api('/api/apply-batch', {method:'POST', body:JSON.stringify({actions: chunk})});
+      success += r.success || 0;
+      failed += r.failed || 0;
+      if (r.errors) errors = errors.concat(r.errors);
+    } catch(e) {
+      failed += chunk.length;
+      errors.push({ name: 'Batch Error', error: e.message });
+    }
+  }
+  
+  showL(false);
+  const r = { success, failed, total, errors };
+  
+  let resultHtml = `<div style="margin-top:12px;padding:12px;border-radius:8px;background:${r.failed===0?'#dcfce7':'#fef9c3'}">`;
+  resultHtml += `<b>Результат импорта:</b><br>`;
+  resultHtml += `✅ Успешно: <b>${r.success}</b> | ❌ Ошибок: <b>${r.failed}</b> | Всего: ${r.total}<br>`;
+  if (r.errors && r.errors.length) {
+    resultHtml += `<details style="margin-top:8px"><summary>📋 Ошибки (${r.errors.length})</summary>`;
+    resultHtml += `<div style="max-height:200px;overflow-y:auto;font-size:11px;margin-top:4px">`;
+    r.errors.forEach(e => {
+      resultHtml += `<div style="padding:2px 0;border-bottom:1px solid #eee">❌ <b>${esc(e.name||'?')}</b>: ${esc((e.error||'').substring(0,150))}</div>`;
+    });
+    resultHtml += `</div></details>`;
+  }
+  resultHtml += `</div>`;
+  
+  const csvRes = document.getElementById('csv-results');
+  const existingLog = csvRes.querySelector('.import-log');
+  if (existingLog) existingLog.remove();
+  csvRes.insertAdjacentHTML('beforeend', `<div class="import-log">${resultHtml}</div>`);
+  
+  const msg = `Готово: ${r.success} успешно, ${r.failed} ошибок`;
+  toast(msg, r.failed===0);
+  loadData();
+}
+
+// Reports
+let emptyData = [];
+async function loadReports() {
+  const hideTech = document.getElementById('rep-hide-tech')?.checked || false;
+  const d = await api('/api/report/duplicates?hideTech=' + hideTech);
+  document.getElementById('rep-dups').innerHTML = d.length ? `<table><tr><th>ФИО</th><th>Действия</th></tr>${d.map(x=>`<tr><td><b style="text-transform:capitalize">${esc(x.name)}</b></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${x.users.map(u=>`<button class="btn btn-p btn-sm" style="padding:2px 6px;font-size:10px" onclick="editEmptyUser('${esc(u.sam)}')">✏️ ${esc(u.sam)}</button>`).join('')}</div></td></tr>`).join('')}</table>` : '✅ Дубликатов не найдено';
+  const e = await api('/api/report/empty-attrs?hideTech=' + hideTech); emptyData = e;
+  renderEmptyPage(0);
+  // Managers report
+  loadManagerReport();
+}
+
+async function loadManagerReport() {
+  if (!AD.users || !AD.users.length) {
+    document.getElementById('rep-mgrs').innerHTML = 'Нет данных';
+    return;
+  }
+  const withMgr = AD.users.filter(u => u.manager);
+  const withoutMgr = AD.users.filter(u => !u.manager);
+  document.getElementById('rep-mgrs').innerHTML = `
+    <div style="display:flex;gap:16px;margin-bottom:12px">
+      <span class="badge bg-new">${withMgr.length} с руководителем</span>
+      <span class="badge bg-diff">${withoutMgr.length} без руководителя</span>
+    </div>
+    ${withoutMgr.length > 0 ? `<details><summary>👤 Пользователи без руководителя (${withoutMgr.length})</summary>
+      <div style="max-height:300px;overflow-y:auto;margin-top:8px">
+        ${withoutMgr.slice(0,100).map(u => `<div style="font-size:12px;padding:3px 0">${esc(u.displayName||'?')} — ${esc(u.title||'?')}</div>`).join('')}
+        ${withoutMgr.length > 100 ? `<div>... и ещё ${withoutMgr.length - 100}</div>` : ''}
+      </div>
+    </details>` : '<div>✅ У всех пользователей указан руководитель</div>'}
+  `;
+}
+
+async function fillEmpty(attr, value, forceAll = false) {
+  const users = forceAll ? AD.users.filter(u => !((Number(u.userAccountControl||0) & 2))) : AD.users.filter(u => !u[attr] || u[attr] === "");
+  if (!users.length) return toast(`Нет пользователей для обновления`, true);
+  if (!value) return toast("Введите или выберите значение", false);
+  const modeText = forceAll ? "ВСЕХ активных" : "пользователей с пустым полем";
+  if (!confirm(`Установить "${attr}" = "${value}" для ${users.length} ${modeText}?`)) return;
+  
+  showL(true, `Подготовка ${users.length} записей...`, 0);
+  const actions = users.map(u => ({ type: "update", dn: u.dn, data: { [attr]: value, displayName: u.displayName } }));
+  
+  const chunkSize = 100;
+  let successCount = 0;
+  
+  for (let i = 0; i < actions.length; i += chunkSize) {
+    const chunk = actions.slice(i, i + chunkSize);
+    const p = Math.round((i / actions.length) * 100);
+    showL(true, `Обновление: ${i} из ${actions.length}...`, p);
+    try {
+      const r = await api("/api/apply-batch", { method: "POST", body: JSON.stringify({ actions: chunk }) });
+      if (r.success) successCount += r.success;
+    } catch(e) { console.error(e); }
+  }
+  
+  showL(false);
+  document.getElementById("rep-fill-res").innerHTML = `<div style="background:#dcfce7;padding:12px;border-radius:8px">✅ Готово! Обновлено: <b>${successCount}</b> пользователей</div>`;
+  toast(`✅ Обновлено ${successCount} записей`, true);
+  loadData();
+}
+
+async function clearAllManagers() {
+  const users = AD.users.filter(u => !!u.manager);
+  if (!users.length) return toast("У всех пользователей уже пустые руководители", true);
+  if (!confirm(`Очистить руководителей у ${users.length} пользователей?`)) return;
+
+  showL(true, `Очистка ${users.length} руководителей...`, 0);
+  const actions = users.map(u => ({ type: "update", dn: u.dn, data: { manager: "", displayName: u.displayName } }));
+
+  const chunkSize = 100;
+  let successCount = 0;
+  for (let i = 0; i < actions.length; i += chunkSize) {
+    const chunk = actions.slice(i, i + chunkSize);
+    const p = Math.round((i / actions.length) * 100);
+    showL(true, `Очистка: ${i} из ${actions.length}...`, p);
+    try {
+      const r = await api("/api/apply-batch", { method: "POST", body: JSON.stringify({ actions: chunk }) });
+      if (r.success) successCount += r.success;
+    } catch(e) { console.error(e); }
+  }
+
+  showL(false);
+  document.getElementById("rep-mgrs-res").innerHTML = `<div style="background:#dcfce7;padding:12px;border-radius:8px">✅ Готово! Очищено: <b>${successCount}</b> руководителей</div>`;
+  toast(`✅ Очищено ${successCount} записей`, true);
+  loadData();
+}
+let emptyPage = 0, emptyPerPage = 100;
+function renderEmptyPage(p) {
+  emptyPage = p;
+  const e = emptyData, start = p * emptyPerPage, chunk = e.slice(start, start + emptyPerPage);
+  const totalPages = Math.ceil(e.length / emptyPerPage);
+  document.getElementById('rep-empty').innerHTML = e.length ? `
+    <p style="margin-bottom:8px"><b>${e.length}</b> пользователей с пустыми атрибутами (стр. ${p+1}/${totalPages})</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px">${Array.from({length:totalPages},(_,i)=>`<button class="btn btn-sm ${i===p?'btn-p':'btn-g'}" onclick="renderEmptyPage(${i})">${i+1}</button>`).join('')}</div>
+    <table><tr><th>ФИО</th><th>Логин</th><th>Пустые поля</th><th></th></tr>
+    ${chunk.map(x=>`<tr>
+      <td>${esc(x.name)}</td>
+      <td>${esc(x.sam)}</td>
+      <td>${x.empty.join(', ')}</td>
+      <td><button class="btn btn-p btn-sm" onclick="editEmptyUser('${esc(x.sam)}')">✏️</button></td>
+    </tr>`).join('')}</table>` : '✅ Все поля заполнены';
+}
+
+function editEmptyUser(sam) {
+  // Switch to Manage tab and open user
+  document.querySelectorAll('nav .tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="change"]').classList.add('active');
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('p-change').classList.add('active');
+  openManage(sam);
+  // Scroll to form
+  document.getElementById('m-form').scrollIntoView({behavior:'smooth'});
+}
+async function loadAudit() {
+  showL(true);
+  try {
+    const r = await api('/api/audit');
+    const ops = await api('/api/audit/operators');
+    
+    const sel = document.getElementById('audit-op-select');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">-- Все операторы --</option>' + ops.map(o => `<option value="${esc(o)}" ${o===current?'selected':''}>${esc(o)}</option>`).join('');
+
+    let html = `<table><tr><th>Время</th><th>Оператор</th><th>Действие</th><th>Объект</th><th>Детали</th></tr>`;
+    r.forEach(x => {
+      let det = '';
+      try {
+        const d = JSON.parse(x.details);
+        if (Object.keys(d).length) {
+          det = `<details><summary style="font-size:10px;cursor:pointer">просмотр</summary><pre style="font-size:9px;color:var(--muted)">${esc(JSON.stringify(d, null, 2))}</pre></details>`;
+        }
+      } catch(e) {}
+      
+      html += `<tr>
+        <td>${x.ts}</td>
+        <td><b style="color:var(--blue)">${esc(x.operator)}</b></td>
+        <td><span class="badge bg-same">${x.action}</span></td>
+        <td style="font-size:11px">${esc(x.target)}</td>
+        <td>${det}</td>
+      </tr>`;
+    });
+    html += `</table>`;
+    document.getElementById('audit-table').innerHTML = html;
+  } catch(e) { console.error(e); }
+  showL(false);
+}
+
+function downloadAudit() {
+  const op = document.getElementById('audit-op-select').value;
+  window.location.href = '/api/audit/download' + (op ? '?operator=' + encodeURIComponent(op) : '');
+}
+
+
+async function loadDisabled() {
+  if (!AD.users || !AD.users.length) return;
+  renderDisabled();
+}
+
+function renderDisabled(q = '') {
+  const dis = AD.users.filter(u => {
+    const isDis = parseInt(u.userAccountControl) & 2;
+    if (!isDis) return false;
+    if (!q) return true;
+    const txt = (u.displayName + ' ' + u.sAMAccountName + ' ' + (u.title||'')).toLowerCase();
+    return txt.includes(q.toLowerCase());
+  });
+
+  let html = `<table><tr><th>ФИО</th><th>Логин</th><th>Папка (OU)</th><th>Действия</th></tr>`;
+  dis.forEach(u => {
+    html += `<tr>
+      <td><b>${esc(u.displayName)}</b></td>
+      <td><code>${esc(u.sAMAccountName)}</code></td>
+      <td style="font-size:10px; color:var(--muted)">${esc(u.dn.split(',').slice(1).join(','))}</td>
+      <td>
+        <div style="display:flex; gap:6px">
+          <button class="btn btn-s btn-sm" onclick="toggleUser('${esc(u.dn)}', true, '${esc(u.sAMAccountName)}')">🟢 Включить</button>
+          <button class="btn btn-p btn-sm" onclick="editEmptyUser('${esc(u.sAMAccountName)}')">✏️ Изменить</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += `</table>`;
+  if (!dis.length) html = '<div style="text-align:center; padding:40px; color:var(--muted)">Отключенных пользователей не найдено</div>';
+  document.getElementById('disabled-table').innerHTML = html;
+}
+
+function filterDisabled(q) {
+  renderDisabled(q);
+}
+
+// Init on load
+checkAuth();
+</script>
+<script>(function(){var b=document.body;var s=localStorage.getItem("theme");if(s==="dark")b.classList.add("dark");var btn=document.createElement("button");btn.textContent=b.classList.contains("dark")?"☀":"☽";btn.className='theme-toggle';btn.style.cssText="background:none;border:none;font-size:18px;cursor:pointer;margin-left:12px;transition:transform 0.3s;opacity:0.85";btn.onmouseenter=function(){btn.style.transform="scale(1.2)";btn.style.opacity="1"};btn.onmouseleave=function(){btn.style.transform="scale(1)";btn.style.opacity="0.85"};btn.onclick=function(){b.classList.toggle("dark");btn.textContent=b.classList.contains("dark")?"☀":"☽";localStorage.setItem("theme",b.classList.contains("dark")?"dark":"light")};var h=document.querySelector("header");if(h)h.appendChild(btn)})();</script></body>
+</html>

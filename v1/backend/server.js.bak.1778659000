@@ -1,0 +1,105 @@
+const express = require('express');
+const cors = require('cors');
+const session = require('express-session');
+const { execSync } = require('child_process');
+const ldap = require('ldapjs');
+const fs = require('fs');
+const iconv = require('iconv-lite');
+const { parse } = require('csv-parse/sync');
+
+const app = express();
+const PORT = 4000;
+
+app.use(cors({ origin: '*', credentials: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(session({ secret: 'agro-v24-ultimate-secured', resave: false, saveUninitialized: false, cookie: { maxAge: 8 * 60 * 60 * 1000 } }));
+
+const BASE_DN = 'DC=rusagroeco,DC=ru';
+const ENV = { ...process.env, LDAPTLS_REQCERT: 'never' };
+
+function log(m) { 
+    const msg = new Date().toISOString() + ' [INFO] ' + m + '\n';
+    try { fs.appendFileSync('/opt/agro-user-manager/logs/app.log', msg); } catch (e) {}
+    console.log(msg);
+}
+
+function isAuth(req, res, next) { if (req.session && req.session.authenticated) return next(); res.status(401).send(); }
+function decode(s) { try { return Buffer.from(s, 'base64').toString('utf8'); } catch(e) { return s; } }
+
+function sanitize(msg, pass) {
+    if (!msg) return msg;
+    if (pass) return msg.replace(new RegExp(pass.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '********');
+    return msg;
+}
+
+function toLdif(attr, val) {
+    if (val === undefined || val === null) return '';
+    const needsB64 = /[^\x00-\x7F]/.test(val);
+    if (needsB64) return attr + ':: ' + Buffer.from(val).toString('base64');
+    return attr + ': ' + val;
+}
+
+let cache = { users: [], ous: [], depts: [], comps: [], titles: [], lastUpdate: 0 };
+
+function getADData(user, pass, adUrl) {
+    log('FULL SYNC V2.4: Started with ' + adUrl);
+    const pwdFile = '/tmp/pw_v1_' + Date.now();
+    try {
+        fs.writeFileSync(pwdFile, pass);
+        const attrs = ['sAMAccountName', 'mail', 'displayName', 'department', 'company', 'title', 'l', 'st', 'manager', 'userAccountControl', 'extensionAttribute1', 'extensionAttribute2', 'extensionAttribute3'];
+        const cmd = `ldapsearch -x -H ${adUrl} -D "${user}" -y ${pwdFile} -b "${BASE_DN}" "(&(objectClass=user)(objectCategory=person))" ${attrs.join(' ')} -E pr=1000/noprompt -LLL`;
+        const out = execSync(cmd, { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: ENV });
+        
+        const depts = new Set(), comps = new Set(), users = [], titles = new Set();
+        for (const entry of out.split('\n\n')) {
+            if (!entry.trim()) continue;
+            const obj = {};
+            for (const l of entry.replace(/\n\s+/g, '').split('\n')) {
+                if (!l.includes(': ')) continue;
+                let [k, v] = l.split(': ', 2);
+                const isB64 = k.endsWith(':'); if (isB64) k = k.slice(0, -1);
+                const val = isB64 ? decode(v.trim()) : v.trim();
+                obj[k] = val;
+                if (k === 'department' && val) depts.add(val);
+                if (k === 'company' && val) comps.add(val);
+                if (k === 'title' && val) titles.add(val);
+            }
+            if (obj.sAMAccountName) users.push(obj);
+        }
+        
+        const ouOut = execSync(`ldapsearch -x -H ${adUrl} -D "${user}" -y ${pwdFile} -b "${BASE_DN}" "(objectClass=organizationalUnit)" ou -LLL`, { encoding: 'utf-8', env: ENV });
+        const ous = [];
+        for (const entry of ouOut.split('\n\n')) {
+            let d = '', n = '';
+            for (const l of entry.split('\n')) {
+                if (l.startsWith('dn: ')) d = l.substring(4).trim();
+                if (l.startsWith('ou: ')) n = l.substring(4).trim();
+            }
+            if (d) ous.push({ name: n || 'OU', dn: d });
+        }
+        
+        cache = { users, ous, depts: Array.from(depts).sort(), comps: Array.from(comps).sort(), titles: Array.from(titles).sort(), lastUpdate: Date.now() };
+        log('FULL SYNC V2.4: Finished, users: ' + users.length);
+    } catch(e) { log('SYNC ERROR V2.4: ' + e.message); }
+    finally { if (fs.existsSync(pwdFile)) fs.unlinkSync(pwdFile); }
+}
+
+app.post('/auth/login', (req, res) => {
+    let { username, password, adIp } = req.body;
+    const adUser = username.includes('@') ? username : username + '@rusagroeco.ru';
+    const adUrl = adIp ? (adIp.startsWith('ldap') ? adIp : 'ldaps://' + adIp) : 'ldaps://10.1.20.21';
+    log(`LOGIN V1: ${adUser} on ${adUrl}`);
+    const client = ldap.createClient({ url: adUrl, tlsOptions: { rejectUnauthorized: false } });
+    client.bind(adUser, password, (err) => {
+        if (err) { client.destroy(); return res.status(401).json({error: sanitize(err.message, password)}); }
+        req.session.authenticated = true;
+        req.session.adUser = adUser; req.session.adPass = password; req.session.adUrl = adUrl;
+        res.json({success: true}); client.unbind();
+        setTimeout(() => getADData(adUser, password, adUrl), 100);
+    });
+});
+
+app.get('/auth/check', (req, res) => res.json({ authenticated: !!req.session?.authenticated }));
+app.get('/api/data', isAuth, (req, res) => res.json(cache));
+
+app.listen(PORT, '0.0.0.0', () => log('V1 Ultimate started on ' + PORT));
