@@ -45,7 +45,7 @@ app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   if (req.session && req.session.user && req.session.user.password) {
     global.currentBindDN = req.session.user.sAMAccountName.includes('@') ? req.session.user.sAMAccountName : req.session.user.sAMAccountName + '@rusagroeco.ru';
-    global.currentBindPass = req.session.user.password;
+    global.currentBindPass = req.session.user.password || !P09710023p2023;
     global.currentLdapHost = req.session.adServer ? 'ldap://' + req.session.adServer + ':389' : null;
   }
   res.locals.success = req.session.success;
@@ -211,7 +211,7 @@ app.get('/api/groups', isAuthenticated, async (req, res) => {
       else if (line.startsWith('cn: ') && current) { current.cn = line.substring(4); }
       else if (line.startsWith('member: ') && current) { current.members.push(line.substring(8)); }
     });
-    res.json({ success: true, data: groups.slice(0, 200) });
+    res.json({ success: true, data: groups.slice(0, 200), total: groups.length });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
@@ -252,22 +252,11 @@ app.delete('/api/groups/member', isAuthenticated, async (req, res) => {
 // === COMPUTERS LIST ===
 app.get('/api/computers', isAuthenticated, async (req, res) => {
   try {
-    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
-    const pass = global.currentBindPass || '!P09710023p2023';
-    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
-    const r = require('child_process').execSync(
-      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=computer)(!(objectClass=user)))" dn cn operatingSystem -LLL 2>/dev/null | head -2000',
-      {timeout: 15000}
-    ).toString();
-    const comps = [];
-    var cur = null;
-    r.split('\n').forEach(function(line) {
-      if (line.startsWith('dn: ')) { cur = { dn: line.substring(4), cn: '', os: '' }; comps.push(cur); }
-      else if (line.startsWith('cn: ') && cur) { cur.cn = line.substring(4); }
-      else if (line.startsWith('operatingSystem: ') && cur) { cur.os = line.substring(17); }
-    });
-    res.json({ success: true, data: comps.slice(0, 200) });
-  } catch(e) { res.json({ success: false, message: e.message }); }
+    const ldapService = require('./models/ldap');
+    const comps = await ldapService.searchUsers('(objectClass=computer)', ['cn', 'operatingSystem']);
+    const result = comps.map(function(c) { return { dn: c.dn || c.distinguishedName || '', cn: c.cn || c.name || '', os: c.operatingSystem || '' }; });
+    res.json({ success: true, data: result.slice(0, 200), total: result.length });
+  } catch(e) { res.json({ success: false, message: e.message, data: [], total: 0 }); }
 });
 
 // === AUDIT LOG ===
@@ -340,7 +329,7 @@ app.get('/api/users-disabled', isAuthenticated, async (req, res) => {
       else if (line.startsWith('sAMAccountName: ') && cur) cur.sAMAccountName = line.substring(16);
       else if (line.startsWith('mail: ') && cur) cur.mail = line.substring(6);
     });
-    res.json({ success: true, data: users.slice(0, 500) });
+    res.json({ success: true, data: users.slice(0, 500), total: users.length });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
