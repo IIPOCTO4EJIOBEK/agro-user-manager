@@ -1,0 +1,130 @@
+<div class="content-card">
+  <div class="content-header">
+    <h2>WiFi & SMS Authentication</h2>
+    <p>MikroTik hotspot management and SMS voucher system</p>
+  </div>
+
+  <div class="cards-grid" style="margin-bottom: 24px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon success">📶</div>
+      </div>
+      <div class="card-title">Active Sessions</div>
+      <div class="card-value">42</div>
+      <div class="card-change positive">
+        <span>Currently connected</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon primary">🎫</div>
+      </div>
+      <div class="card-title">Vouchers Today</div>
+      <div class="card-value">127</div>
+      <div class="card-change positive">
+        <span>Generated today</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon warning">📨</div>
+      </div>
+      <div class="card-title">SMS Sent</div>
+      <div class="card-value">8,934</div>
+      <div class="card-change positive">
+        <span>Total this month</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <div style="padding: 24px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 16px; color: white;">
+      <h3 style="font-size: 18px; margin-bottom: 8px;">Generate WiFi Voucher</h3>
+      <p style="font-size: 14px; opacity: 0.9; margin-bottom: 20px;">Create access code for guest network</p>
+      
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <select style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px;">
+          <option>1 Hour</option>
+          <option>4 Hours</option>
+          <option selected>24 Hours</option>
+          <option>7 Days</option>
+        </select>
+        <select style="flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px;">
+          <option>10 Mbps</option>
+          <option selected>50 Mbps</option>
+          <option>100 Mbps</option>
+        </select>
+      </div>
+
+      <button class="btn" style="background: white; color: #4f46e5; width: 100%;">
+        Generate Voucher
+      </button>
+    </div>
+
+    <div style="padding: 24px; background: #f8fafc; border-radius: 16px; border: 2px solid #e2e8f0;">
+      <h3 style="font-size: 18px; margin-bottom: 8px; color: #1e293b;">Send SMS Code</h3>
+      <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">Direct SMS authentication</p>
+      
+      <div style="margin-bottom: 16px;">
+        <input 
+          type="text" 
+          placeholder="+7 (___) ___-__-__" 
+          style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px;"
+        >
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;">
+        Send SMS Code
+      </button>
+    </div>
+  </div>
+
+  <div class="content-card" style="background: #f8fafc; margin-top: 0;">
+    <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">Recent WiFi Sessions</h3>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid #e2e8f0;">
+            <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">User</th>
+            <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">IP Address</th>
+            <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">MAC Address</th>
+            <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Duration</th>
+            <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #1e293b; font-weight: 500;">guest_user_4821</td>
+            <td style="padding: 12px; color: #475569;">192.168.88.142</td>
+            <td style="padding: 12px; color: #475569;">AA:BB:CC:DD:EE:12</td>
+            <td style="padding: 12px; color: #475569;">2h 34m</td>
+            <td style="padding: 12px;">
+              <span style="padding: 4px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-size: 12px; font-weight: 600;">Online</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #1e293b; font-weight: 500;">guest_user_4820</td>
+            <td style="padding: 12px; color: #475569;">192.168.88.138</td>
+            <td style="padding: 12px; color: #475569;">AA:BB:CC:DD:EE:34</td>
+            <td style="padding: 12px; color: #475569;">45m</td>
+            <td style="padding: 12px;">
+              <span style="padding: 4px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-size: 12px; font-weight: 600;">Online</span>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #1e293b; font-weight: 500;">guest_user_4819</td>
+            <td style="padding: 12px; color: #475569;">-</td>
+            <td style="padding: 12px; color: #475569;">AA:BB:CC:DD:EE:56</td>
+            <td style="padding: 12px; color: #475569;">1h 12m</td>
+            <td style="padding: 12px;">
+              <span style="padding: 4px 12px; background: #fee2e2; color: #991b1b; border-radius: 20px; font-size: 12px; font-weight: 600;">Offline</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

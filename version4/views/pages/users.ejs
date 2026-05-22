@@ -1,0 +1,94 @@
+<div class="content-card">
+  <div class="content-header">
+    <h2>User Management</h2>
+    <p>Manage Active Directory users and groups</p>
+  </div>
+
+  <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+    <input 
+      type="text" 
+      placeholder="Search users..." 
+      style="flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px;"
+    >
+    <button class="btn btn-primary" style="width: auto;">
+      ➕ Add User
+    </button>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid #e2e8f0;">
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">User</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Email</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Department</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Status</th>
+          <th style="padding: 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 13px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 16px 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #4f46e5, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">JD</div>
+              <div>
+                <div style="font-weight: 600; color: #1e293b;">John Doe</div>
+                <div style="font-size: 13px; color: #64748b;">jdoe</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 16px 12px; color: #475569;">jdoe@example.com</td>
+          <td style="padding: 16px 12px; color: #475569;">IT Department</td>
+          <td style="padding: 16px 12px;">
+            <span style="padding: 4px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-size: 12px; font-weight: 600;">Active</span>
+          </td>
+          <td style="padding: 16px 12px;">
+            <button style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; color: #475569; font-size: 13px;">Edit</button>
+          </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 16px 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">JS</div>
+              <div>
+                <div style="font-weight: 600; color: #1e293b;">Jane Smith</div>
+                <div style="font-size: 13px; color: #64748b;">jsmith</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 16px 12px; color: #475569;">jsmith@example.com</td>
+          <td style="padding: 16px 12px; color: #475569;">HR Department</td>
+          <td style="padding: 16px 12px;">
+            <span style="padding: 4px 12px; background: #dcfce7; color: #166534; border-radius: 20px; font-size: 12px; font-weight: 600;">Active</span>
+          </td>
+          <td style="padding: 16px 12px;">
+            <button style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; color: #475569; font-size: 13px;">Edit</button>
+          </td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 16px 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">MB</div>
+              <div>
+                <div style="font-weight: 600; color: #1e293b;">Mike Brown</div>
+                <div style="font-size: 13px; color: #64748b;">mbrown</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 16px 12px; color: #475569;">mbrown@example.com</td>
+          <td style="padding: 16px 12px; color: #475569;">Sales</td>
+          <td style="padding: 16px 12px;">
+            <span style="padding: 4px 12px; background: #fee2e2; color: #991b1b; border-radius: 20px; font-size: 12px; font-weight: 600;">Disabled</span>
+          </td>
+          <td style="padding: 16px 12px;">
+            <button style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; color: #475569; font-size: 13px;">Edit</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top: 24px; text-align: center; color: #64748b; font-size: 14px;">
+    <p>Showing 3 of 2,543 users</p>
+  </div>
+</div>

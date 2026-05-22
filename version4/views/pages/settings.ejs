@@ -1,0 +1,132 @@
+<div class="content-card">
+  <div class="content-header">
+    <h2>System Settings</h2>
+    <p>Configure application and LDAP settings</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- LDAP Settings -->
+    <div style="padding: 24px; background: #f8fafc; border-radius: 16px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">📡 LDAP Configuration</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">LDAP Server URL</label>
+        <input type="text" value="ldap://dc.example.com:389" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Base DN</label>
+        <input type="text" value="DC=example,DC=com" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Bind DN</label>
+        <input type="text" value="CN=ServiceAccount,OU=Service Accounts" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;">Save LDAP Settings</button>
+    </div>
+
+    <!-- AD Groups -->
+    <div style="padding: 24px; background: #f8fafc; border-radius: 16px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">👥 AD Groups for RBAC</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Administrators Group</label>
+        <input type="text" value="AD Administrators" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Network Admins Group</label>
+        <input type="text" value="Network Administrators" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Monitoring Group</label>
+        <input type="text" value="Monitoring Group" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">WiFi Managers Group</label>
+        <input type="text" value="WiFi Managers" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;">Save Group Settings</button>
+    </div>
+
+    <!-- Session Settings -->
+    <div style="padding: 24px; background: #f8fafc; border-radius: 16px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">🔐 Security Settings</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Session Timeout (minutes)</label>
+        <input type="number" value="60" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Rate Limit (requests/minute)</label>
+        <input type="number" value="100" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #475569; font-size: 13px;">
+          <input type="checkbox" checked style="width: 16px; height: 16px;">
+          Enable HTTPS Only
+        </label>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: #475569; font-size: 13px;">
+          <input type="checkbox" checked style="width: 16px; height: 16px;">
+          Enable Audit Logging
+        </label>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;">Save Security Settings</button>
+    </div>
+
+    <!-- SMS Gateway -->
+    <div style="padding: 24px; background: #f8fafc; border-radius: 16px;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">📨 SMS Gateway</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">SMS Provider</label>
+        <select style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+          <option>Twilio</option>
+          <option selected>SMS.ru</option>
+          <option>Prostor SMS</option>
+          <option>Custom API</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">API Key</label>
+        <input type="password" value="••••••••••••••••" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-weight: 600; color: #475569; font-size: 13px; margin-bottom: 6px;">Sender ID</label>
+        <input type="text" value="WiFiAuth" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;">Test Connection</button>
+    </div>
+  </div>
+
+  <!-- System Actions -->
+  <div style="margin-top: 24px; padding: 24px; background: linear-gradient(135deg, #fef2f2, #fee2e2); border-radius: 16px; border: 2px solid #fecaca;">
+    <h3 style="font-size: 16px; margin-bottom: 16px; color: #991b1b;">⚠️ Danger Zone</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <button class="btn" style="background: white; color: #dc2626; border: 2px solid #dc2626;">
+        🔄 Clear Cache
+      </button>
+      <button class="btn" style="background: white; color: #dc2626; border: 2px solid #dc2626;">
+        📊 Reset Statistics
+      </button>
+      <button class="btn" style="background: #dc2626; color: white;">
+        🗑️ Delete All Sessions
+      </button>
+    </div>
+  </div>
+</div>
