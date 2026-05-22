@@ -200,10 +200,9 @@ app.get('/api/groups', isAuthenticated, async (req, res) => {
     const pass = global.currentBindPass || '!P09710023p2023';
     const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
     const filter = req.query.search ? '(&(objectClass=group)(cn=*' + req.query.search + '*))' : '(objectClass=group)';
-    const r = require('child_process').execSync(
-      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "' + filter + '" dn cn member -LLL 2>/dev/null | head -2000',
-      {timeout: 15000}
-    ).toString();
+    const execSync = require('child_process').execSync;
+    var cmd = "set +H; ldapsearch -x -E pr=5000/noprompt -H " + host + " -D '" + bind + "' -w '" + pass + "' -b 'DC=rusagroeco,DC=ru' '" + filter.replace(/'/g, "'\\'") + "' dn cn member -LLL 2>/dev/null | head -2000";
+    const r = execSync(cmd, {shell:'/bin/bash', timeout:30000, maxBuffer: 10*1024*1024}).toString();
     const groups = [];
     var current = null;
     r.split('\n').forEach(function(line) {
@@ -211,7 +210,7 @@ app.get('/api/groups', isAuthenticated, async (req, res) => {
       else if (line.startsWith('cn: ') && current) { current.cn = line.substring(4); }
       else if (line.startsWith('member: ') && current) { current.members.push(line.substring(8)); }
     });
-    res.json({ success: true, data: groups.slice(0, 200), total: groups.length });
+    res.json({ success: true, groups: groups.slice(0, 200), total: groups.length });
   } catch(e) { res.json({ success: false, message: e.message }); }
 });
 
