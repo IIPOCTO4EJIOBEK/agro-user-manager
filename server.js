@@ -488,6 +488,8 @@ app.get('/settings', isAuthenticated, (req, res) => {
 });
 
 // Error pages
+app.get('/', function(req,res){ if(req.session&&req.session.user) res.redirect('/dashboard'); else res.redirect('/login'); });
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',
