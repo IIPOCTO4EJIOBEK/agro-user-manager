@@ -1,0 +1,27 @@
+<%- include('../partials/header', { activePage: 'groups' }) %>
+<div class="card">
+  <h3><i class="fas fa-users-cog"></i> Группы безопасности</h3>
+  <div class="row" style="margin-bottom:16px">
+    <div class="fg" style="flex:1"><input type="text" id="grp-search" placeholder="Поиск группы..." onkeyup="if(event.key==='Enter')loadGroups()"></div>
+    <div><button class="btn btn-p btn-sm" onclick="loadGroups()"><i class="fas fa-search"></i> Поиск</button></div>
+  </div>
+  <div id="groups-list" style="max-height:500px;overflow:auto"><div class="spinner"></div> Загрузка...</div>
+</div>
+<script>
+function loadGroups() {
+  var q = document.getElementById('grp-search').value;
+  document.getElementById('groups-list').innerHTML = '<div class="spinner"></div> Загрузка...';
+  fetch('/api/groups?search='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(d){
+    if(!d.success||!d.data){document.getElementById('groups-list').innerHTML='<div class="empty-state"><i class="fas fa-users-cog"></i><p>Нет данных</p></div>';return;}
+    var html = '<table><tr><th>Название</th><th>Участников</th></tr>';
+    d.data.forEach(function(g){
+      html += '<tr><td><b>'+esc(g.cn)+'</b></td><td>'+(g.members?g.members.length:0)+'</td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('groups-list').innerHTML = html;
+  }).catch(function(e){document.getElementById('groups-list').innerHTML='Ошибка: '+e.message;});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+loadGroups();
+</script>
+<%- include('../partials/footer') %>

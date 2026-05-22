@@ -1,0 +1,18 @@
+<%- include('../partials/header', { activePage: 'computers' }) %>
+<div class="card">
+  <h3><i class="fas fa-desktop"></i> Компьютеры в AD</h3>
+  <div id="comps-list" style="max-height:500px;overflow:auto"><div class="spinner"></div> Загрузка...</div>
+</div>
+<script>
+fetch('/api/computers').then(function(r){return r.json()}).then(function(d){
+  if(!d.success||!d.data){document.getElementById('comps-list').innerHTML='<div class="empty-state"><i class="fas fa-desktop"></i><p>Нет данных</p></div>';return;}
+  var html = '<table><tr><th>Имя</th><th>ОС</th></tr>';
+  d.data.forEach(function(c){
+    html += '<tr><td><b>'+esc(c.cn)+'</b></td><td>'+esc(c.os||'-')+'</td></tr>';
+  });
+  html += '</table>';
+  document.getElementById('comps-list').innerHTML = html;
+}).catch(function(e){document.getElementById('comps-list').innerHTML='Ошибка: '+e.message;});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+<%- include('../partials/footer') %>

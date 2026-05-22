@@ -164,6 +164,128 @@ app.get('/api/sms-auth/reset', isAuthenticated, async (req, res) => {
   } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+
+// === OU LIST ===
+app.get('/api/ous', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const fs = require('fs');
+    const r = require('child_process').execSync(
+      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(objectClass=organizationalUnit)" dn -LLL 2>/dev/null | grep "^dn:" | head -500',
+      {timeout: 15000}
+    ).toString();
+    const ous = r.split('\n').filter(l => l.startsWith('dn: ')).map(l => l.substring(4));
+    res.json({ success: true, data: ous });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === GROUPS LIST ===
+app.get('/api/groups', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const filter = req.query.search ? '(&(objectClass=group)(cn=*' + req.query.search + '*))' : '(objectClass=group)';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "' + filter + '" dn cn member -LLL 2>/dev/null | head -2000',
+      {timeout: 15000}
+    ).toString();
+    const groups = [];
+    var current = null;
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('dn: ')) { current = { dn: line.substring(4), cn: '', members: [] }; groups.push(current); }
+      else if (line.startsWith('cn: ') && current) { current.cn = line.substring(4); }
+      else if (line.startsWith('member: ') && current) { current.members.push(line.substring(8)); }
+    });
+    res.json({ success: true, data: groups.slice(0, 200) });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === GROUP ADD MEMBER ===
+app.post('/api/groups/member', isAuthenticated, async (req, res) => {
+  try {
+    const { groupDn, userDn } = req.body;
+    if (!groupDn || !userDn) return res.json({ success: false, message: 'Missing params' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const tmpfile = '/tmp/grp_' + Date.now() + '.ldif';
+    const ldif = 'dn: ' + groupDn + '\nchangetype: modify\nadd: member\nmember: ' + userDn + '\n';
+    require('fs').writeFileSync(tmpfile, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmpfile + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmpfile);
+    res.json({ success: true });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === GROUP REMOVE MEMBER ===
+app.delete('/api/groups/member', isAuthenticated, async (req, res) => {
+  try {
+    const { groupDn, userDn } = req.body;
+    if (!groupDn || !userDn) return res.json({ success: false, message: 'Missing params' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const tmpfile = '/tmp/grp_' + Date.now() + '.ldif';
+    const ldif = 'dn: ' + groupDn + '\nchangetype: modify\ndelete: member\nmember: ' + userDn + '\n';
+    require('fs').writeFileSync(tmpfile, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmpfile + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmpfile);
+    res.json({ success: true });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === COMPUTERS LIST ===
+app.get('/api/computers', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=computer)(!(objectClass=user)))" dn cn operatingSystem -LLL 2>/dev/null | head -2000',
+      {timeout: 15000}
+    ).toString();
+    const comps = [];
+    var cur = null;
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('dn: ')) { cur = { dn: line.substring(4), cn: '', os: '' }; comps.push(cur); }
+      else if (line.startsWith('cn: ') && cur) { cur.cn = line.substring(4); }
+      else if (line.startsWith('operatingSystem: ') && cur) { cur.os = line.substring(17); }
+    });
+    res.json({ success: true, data: comps.slice(0, 200) });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === AUDIT LOG ===
+app.get('/api/audit', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "CN=Configuration,DC=rusagroeco,DC=ru" "(&(objectClass=domain) (!(objectClass=domain) ))" dn -LLL 2>/dev/null | head -5',
+      {timeout: 5000}
+    ).toString();
+    // Return empty audit for now (v3 audit is in SQLite)
+    res.json({ success: true, data: [], message: 'Audit module ready - integration pending' });
+  } catch(e) { res.json({ success: false, data: [] }); }
+});
+
+// === PAGES ===
+// OU browser page
+app.get('/ous', isAuthenticated, function(req,res){ res.render('pages/ous', { title: 'OU-структура', user: req.session.user, activePage: 'ous' }); });
+
+// Groups page
+app.get('/groups', isAuthenticated, function(req,res){ res.render('pages/groups', { title: 'Группы безопасности', user: req.session.user, activePage: 'groups' }); });
+
+// Computers page
+app.get('/computers', isAuthenticated, function(req,res){ res.render('pages/computers', { title: 'Компьютеры', user: req.session.user, activePage: 'computers' }); });
+
+// Audit page
+app.get('/audit', isAuthenticated, function(req,res){ res.render('pages/audit', { title: 'Аудит', user: req.session.user, activePage: 'audit' }); });
+
 // Page routes with RBAC
 const { requireAdmin, requireNetworkAdmin, requireMonitoring } = require('./middleware/auth');
 

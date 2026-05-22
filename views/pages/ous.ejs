@@ -1,0 +1,23 @@
+<%- include('../partials/header', { activePage: 'ous' }) %>
+<div class="card">
+  <h3><i class="fas fa-sitemap"></i> OU-структура</h3>
+  <div id="ous-tree" style="font-size:13px;max-height:600px;overflow:auto"><div class="spinner"></div> Загрузка...</div>
+</div>
+<script>
+fetch('/api/ous').then(function(r){return r.json()}).then(function(d){
+  if(!d.success||!d.data||!d.data.length){document.getElementById('ous-tree').innerHTML='<div class="empty-state"><i class="fas fa-sitemap"></i><p>Нет OU</p></div>';return;}
+  var items = d.data.sort();
+  var html = '<div style="padding:8px;font-weight:600;color:var(--primary)"><i class="fas fa-globe"></i> rusagroeco.ru</div>';
+  items.forEach(function(ou){
+    var depth = ou.split(',').length - 1;
+    var parts = ou.split(',');
+    var name = parts[0].replace(/^OU=/,'').replace(/^CN=/,'');
+    html += '<div style="padding-left:'+(depth*20)+'px;padding-top:3px;padding-bottom:3px;border-bottom:1px solid var(--border-light)">';
+    for(var i=1;i<depth;i++) html += '<span style="color:var(--border)">| </span>';
+    html += '<i class="fas fa-folder-open" style="color:var(--warning);margin-right:6px"></i> ' + esc(name) + '</div>';
+  });
+  document.getElementById('ous-tree').innerHTML = html;
+}).catch(function(e){document.getElementById('ous-tree').innerHTML='Ошибка: '+e.message;});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+<%- include('../partials/footer') %>
