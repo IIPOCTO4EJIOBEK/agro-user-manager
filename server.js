@@ -490,6 +490,16 @@ app.get('/settings', isAuthenticated, (req, res) => {
 // Error pages
 app.get('/', function(req,res){ if(req.session&&req.session.user) res.redirect('/dashboard'); else res.redirect('/login'); });
 
+
+// === RESYNC ===
+app.get('/api/resync', isAuthenticated, async (req, res) => {
+  try { res.json({ success: true, message: 'OK' }); }
+  catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === PASSWORDS PAGE ===
+app.get('/passwords', isAuthenticated, function(req,res){ res.render('pages/passwords', { title: 'Управление паролями', user: req.session.user, activePage: 'passwords' }); });
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',
