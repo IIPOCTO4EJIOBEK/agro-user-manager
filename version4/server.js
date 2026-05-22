@@ -15,6 +15,7 @@ const usersRoutes = require('./routes/users');
 const wifiRoutes = require('./routes/wifi');
 const monitoringRoutes = require('./routes/monitoring');
 const settingsRoutes = require('./routes/settings');
+const apiRoutes = require('./routes/api');
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use('/users', usersRoutes);
 app.use('/wifi', wifiRoutes);
 app.use('/monitoring', monitoringRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/api', apiRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
