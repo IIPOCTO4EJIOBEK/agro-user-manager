@@ -2401,6 +2401,55 @@ app.post('/api/fix-cn', isAuth, async (req, res) => {
     res.json({ fixed, skipped, failed, total: cache.users.length, results: results.slice(0, 500) });
 });
 
+// ─── SMS-AUTH PROXY ────────────────────────────────────────────────
+const http = require('http');
+const SMS_AUTH_URL = 'http://10.5.2.74:5000';
+const SMS_AUTH_HOST = '10.5.2.74';
+const SMS_AUTH_PORT = 5000;
+
+function proxySmsAuth(req, res) {
+  const options = {
+    hostname: SMS_AUTH_HOST,
+    port: SMS_AUTH_PORT,
+    path: req.url,
+    method: req.method,
+    headers: { ...req.headers, host: SMS_AUTH_HOST }
+  };
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  proxyReq.on('error', () => res.status(502).json({ error: 'SMS auth server unavailable' }));
+  if (req.body) proxyReq.write(JSON.stringify(req.body));
+  req.pipe(proxyReq);
+}
+
+app.get('/api/sms-auth/history', isAuth, proxySmsAuth);
+app.get('/api/sms-auth/stats', isAuth, proxySmsAuth);
+app.get('/api/sms-auth/reset', isAuth, proxySmsAuth);
+app.post('/api/sms-auth/reset', isAuth, (req, res) => {
+  const options = {
+    hostname: SMS_AUTH_HOST,
+    port: SMS_AUTH_PORT,
+    path: '/api/sms-auth/reset',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(JSON.stringify(req.body || {}))
+    }
+  };
+  const proxyReq = http.request(options, (proxyRes) => {
+    let data = '';
+    proxyRes.on('data', chunk => data += chunk);
+    proxyRes.on('end', () => {
+      try { res.json(JSON.parse(data)); } catch(e) { res.status(502).json({ error: 'SMS auth error' }); }
+    });
+  });
+  proxyReq.on('error', () => res.status(502).json({ error: 'SMS auth server unavailable' }));
+  proxyReq.write(JSON.stringify(req.body || {}));
+  proxyReq.end();
+});
+
 // ─── START ────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
     log('OK', `╔══════════════════════════════════════════╗`);

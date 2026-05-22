@@ -3,150 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AD Ultimate Manager V3.1 — AH Prostory</title>
+<title>AD Ultimate Manager v3.1 — AH Prostory</title>
 <style>
 :root {
-  --bg: #f0f4f8; --card: #fff; --text: #2d3748; --muted: #718096;
-  --blue: #2563eb; --blue-h: #1d4ed8; --green: #16a34a; --green-h: #15803d;
-  --orange: #ea580c; --orange-h: #c2410c; --red: #dc2626; --yellow: #ca8a04;
-  --border: #e2e8f0; --radius: 10px; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --text-secondary: #64748b;
+  --primary: #2563eb; --primary-hover: #1d4ed8; --primary-light: #eff6ff;
+  --success: #16a34a; --success-hover: #15803d; --success-light: #f0fdf4;
+  --warning: #ea580c; --warning-hover: #c2410c; --warning-light: #fff7ed;
+  --danger: #dc2626; --danger-light: #fef2f2;
+  --border: #e2e8f0; --border-light: #f1f5f9;
+  --radius: 12px; --radius-sm: 8px; --radius-xs: 6px;
+  --shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
-header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
-header .user { display: flex; align-items: center; gap: 12px; font-size: 13px; }
-header .user button { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 0; overflow-x: auto; }
-nav .tab { padding: 14px 20px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; transition: .2s; }
-nav .tab:hover { color: var(--text); }
-nav .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
-main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
-.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
-.card h3 { font-size: 15px; margin-bottom: 16px; color: var(--text); }
-.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
-.fg { display: flex; flex-direction: column; gap: 4px; }
-.fg label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-.fg input, .fg select { padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; background: #fafbfc; transition: .2s; }
-.fg input:focus, .fg select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
-.stat { background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow); }
-.stat .num { font-size: 32px; font-weight: 700; }
-.stat .lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.btn { padding: 9px 18px; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600; transition: .2s; display: inline-flex; align-items: center; gap: 6px; }
-.btn-p { background: var(--blue); color: #fff; } .btn-p:hover { background: var(--blue-h); }
-.btn-s { background: var(--green); color: #fff; } .btn-s:hover { background: var(--green-h); }
-.btn-o { background: var(--orange); color: #fff; } .btn-o:hover { background: var(--orange-h); }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: #fff; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 10px; }
+header .user { display: flex; align-items: center; gap: 14px; font-size: 13px; }
+header .user button { background: rgba(255,255,255,0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: var(--transition); }
+header .user button:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
+nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+nav::-webkit-scrollbar { display: none; }
+nav .tab { padding: 14px 18px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-secondary); border-bottom: 2.5px solid transparent; white-space: nowrap; transition: var(--transition); }
+nav .tab:hover { color: var(--text); background: var(--primary-light); }
+nav .tab.active { color: var(--primary); border-bottom-color: var(--primary); background: transparent; font-weight: 600; }
+main { max-width: 1280px; margin: 24px auto; padding: 0 24px; }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; border: 1px solid var(--border-light); transition: box-shadow var(--transition); }
+.card:hover { box-shadow: var(--shadow-md); }
+.card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+.fg input, .fg select, .fg textarea { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: #fafbfc; transition: var(--transition); color: var(--text); }
+.fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); background: #fff; }
+.fg input:read-only, .fg input[readonly] { background: #f1f5f9; color: var(--text-secondary); cursor: default; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+.stat { background: var(--card); border-radius: var(--radius); padding: 22px 16px; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border-light); transition: transform var(--transition), box-shadow var(--transition); }
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat .num { font-size: 34px; font-weight: 800; line-height: 1.1; }
+.stat .lbl { font-size: 12px; color: var(--text-secondary); margin-top: 6px; font-weight: 500; }
+.btn { padding: 10px 20px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 600; transition: var(--transition); display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-p { background: var(--primary); color: #fff; box-shadow: 0 1px 3px rgba(37,99,235,0.3); } .btn-p:hover { background: var(--primary-hover); box-shadow: 0 2px 6px rgba(37,99,235,0.4); }
+.btn-s { background: var(--success); color: #fff; box-shadow: 0 1px 3px rgba(22,163,74,0.3); } .btn-s:hover { background: var(--success-hover); box-shadow: 0 2px 6px rgba(22,163,74,0.4); }
+.btn-o { background: var(--warning); color: #fff; box-shadow: 0 1px 3px rgba(234,88,12,0.3); } .btn-o:hover { background: var(--warning-hover); box-shadow: 0 2px 6px rgba(234,88,12,0.4); }
 .btn-g { background: #e2e8f0; color: var(--text); } .btn-g:hover { background: #cbd5e1; }
-.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+.btn-lg { padding: 12px 28px; font-size: 14px; }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { text-align: left; padding: 10px 12px; background: #f8fafc; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--muted); font-size: 11px; text-transform: uppercase; }
-td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-tr:hover { background: #f8fafc; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
-.bg-new { background: #dcfce7; color: #166534; } .bg-diff { background: #fef9c3; color: #854d0e; } .bg-same { background: #f1f5f9; color: #64748b; }
-.toast { position: fixed; top: 72px; right: 24px; padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 13px; z-index: 200; animation: in .3s ease; }
-.toast-ok { background: var(--green); } .toast-err { background: var(--red); }
-@keyframes in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.loader { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300; }
-.spin { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+th { text-align: left; padding: 12px 14px; background: #f8fafc; border-bottom: 2px solid var(--border); font-weight: 600; color: var(--text-secondary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+tbody tr { transition: background var(--transition); }
+tbody tr:hover { background: #f8fafc; }
+tbody tr:nth-child(even) { background: #fafbfc; }
+tbody tr:nth-child(even):hover { background: #f1f5f9; }
+.badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; gap: 4px; }
+.bg-new { background: var(--success-light); color: #166534; } .bg-diff { background: var(--warning-light); color: #9a3412; } .bg-same { background: #f1f5f9; color: #64748b; } .bg-clone { background: #fef3c7; color: #92400e; }
+.toast { position: fixed; top: 76px; right: 28px; padding: 14px 22px; border-radius: var(--radius-sm); color: #fff; font-size: 13px; font-weight: 500; z-index: 200; animation: slideIn 0.3s ease; box-shadow: var(--shadow-lg); }
+.toast-ok { background: var(--success); } .toast-err { background: var(--danger); }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+.loader { position: fixed; inset: 0; background: rgba(255,255,255,0.8); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 300; }
+.spin { width: 40px; height: 40px; border: 3.5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.pane { display: none; } .pane.active { display: block; }
-#login-screen { max-width: 400px; margin: 80px auto; }
+.pane { display: none; } .pane.active { display: block; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+#login-screen { max-width: 420px; margin: 100px auto; }
 #main-screen { display: none; }
-.upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px; text-align: center; cursor: pointer; transition: .2s; }
-.upload-zone:hover { border-color: var(--blue); background: #f0f7ff; }
-.upload-zone.drag { border-color: var(--blue); background: #eff6ff; }
-.chk { display: flex; align-items: center; gap: 6px; font-size: 13px; }
-.chk input { width: auto; }
-.syncing { background: #fef9c3; color: #854d0e; padding: 8px 16px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; }
-.diff-row td { padding: 2px 4px; font-size: 11px; }
-.diff-old { text-decoration: line-through; color: #94a3b8; } .diff-new { color: #16a34a; font-weight: 600; }
+.upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 44px 32px; text-align: center; cursor: pointer; transition: var(--transition); }
+.upload-zone:hover { border-color: var(--primary); background: var(--primary-light); transform: translateY(-1px); }
+.upload-zone.drag { border-color: var(--primary); background: #eff6ff; border-style: solid; }
+.chk { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; }
+.chk input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+.syncing { background: var(--warning-light); color: #9a3412; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.diff-row td { padding: 3px 6px; font-size: 11px; }
+.diff-old { text-decoration: line-through; color: #94a3b8; } .diff-new { color: var(--success); font-weight: 600; }
 .search-box { position: relative; }
-.search-box input { width: 100%; padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px; font-size: 14px; }
-.search-box input:focus { border-color: var(--blue); outline: none; }
-.user-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin: 6px 0; cursor: pointer; transition: .2s; }
-.user-card:hover { border-color: var(--blue); background: #f8faff; }
-.user-card.active { border-color: var(--blue); background: #eff6ff; }
-.user-card .name { font-weight: 600; } .user-card .info { font-size: 11px; color: var(--muted); }
-.group-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-top: 8px; background: #fafafa; }
-.group-item { display: flex; align-items: center; gap: 8px; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #f1f1f1; }
+.search-box input { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: #fafbfc; transition: var(--transition); }
+.search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); outline: none; background: #fff; }
+.user-card { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 18px; margin: 8px 0; cursor: pointer; transition: var(--transition); }
+.user-card:hover { border-color: var(--primary); background: var(--primary-light); transform: translateX(4px); }
+.user-card.active { border-color: var(--primary); background: var(--primary-light); }
+.user-card .name { font-weight: 600; font-size: 14px; } .user-card .info { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.group-list { max-height: 260px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-top: 8px; background: #fafafa; }
+.group-list::-webkit-scrollbar { width: 6px; }
+.group-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.group-item { display: flex; align-items: center; gap: 10px; font-size: 12px; padding: 6px 4px; border-bottom: 1px solid #f1f5f9; transition: background var(--transition); }
+.group-item:hover { background: #f8fafc; border-radius: 4px; }
 .group-item:last-child { border-bottom: none; }
-.prog-w { width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; margin: 10px 0; display: none; }
-.prog-b { height: 100%; background: var(--blue); width: 0%; transition: width .2s; }
+.group-item input[type=checkbox] { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+.prog-w { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin: 12px 0; display: none; }
+.prog-b { height: 100%; background: linear-gradient(90deg, var(--primary), #60a5fa); width: 0%; transition: width 0.3s ease; border-radius: 4px; }
 
-/* === Тёмная тема (лайт-дарк) === */
-body.dark {
-  background: #1e2746; color: #d1d5e0;
-  transition: background 0.4s, color 0.4s;
-}
-body.dark * {
-  transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
-}
-body.dark header {
-  background: linear-gradient(135deg, #0f1b3d, #1a2a5e);
-}
-body.dark nav {
-  background: #1a2a5e; border-color: #2a3f7e;
-}
-body.dark .card, body.dark table, body.dark form, body.dark div[class*=box] {
-  background: #1e2a50; border-color: #2a3f7e; color: #d1d5e0;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-body.dark th {
-  background: #2a3f7e; color: #e8ebf5;
-}
-body.dark td {
-  border-color: #1e2a50;
-}
-body.dark input, body.dark select, body.dark textarea {
-  background: #162244; color: #e0e4f0; border-color: #2a3f7e;
-}
-body.dark input:focus, body.dark select:focus, body.dark textarea:focus {
-  border-color: #4a6fd4; box-shadow: 0 0 0 2px rgba(74,111,212,0.25);
-}
-body.dark header .theme-toggle {
-  color: #c5d5f7 !important; opacity: 1 !important;
-  text-shadow: 0 0 8px rgba(74,111,212,0.6);
-  filter: drop-shadow(0 0 4px rgba(74,111,212,0.5));
-}
-body.dark header .theme-toggle:hover {
-  color: #fff !important; transform: scale(1.2);
-}
-body.dark .btn, body.dark button:not([style*=none]) {
-  opacity: 0.92; transition: opacity 0.2s, transform 0.2s;
-}
-body.dark .btn:hover, body.dark button:hover {
-  opacity: 1; transform: translateY(-1px);
-}
-body.dark tr:hover td {
-  background: #263566;
-}
+/* === Dark Theme === */
+body.dark { background: #0f172a; color: #e2e8f0; }
+body.dark * { transition: background 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s; }
+body.dark header { background: linear-gradient(135deg, #0b1a33 0%, #1a2a5e 100%); box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+body.dark nav { background: #1a2332; border-color: #1e293b; }
+body.dark nav .tab { color: #94a3b8; }
+body.dark nav .tab:hover { background: rgba(37,99,235,0.1); color: #e2e8f0; }
+body.dark nav .tab.active { color: #60a5fa; }
+body.dark .card, body.dark table, body.dark form, body.dark div[class*=box] { background: #1e293b; border-color: #334155; color: #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+body.dark .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+body.dark th { background: #1a2332; color: #94a3b8; border-color: #334155; }
+body.dark td { border-color: #334155; }
+body.dark tbody tr:nth-child(even) { background: #1a2332; }
+body.dark tbody tr:hover { background: #1e3a5f; }
+body.dark tbody tr:nth-child(even):hover { background: #1e3a5f; }
+body.dark input, body.dark select, body.dark textarea { background: #0f172a; color: #e2e8f0; border-color: #334155; }
+body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); background: #0f172a; }
+body.dark input:read-only, body.dark input[readonly] { background: #1a2332; color: #64748b; }
+body.dark .btn-g { background: #334155; color: #e2e8f0; }
+body.dark .btn-g:hover { background: #475569; }
+body.dark .user-card { border-color: #334155; }
+body.dark .user-card:hover { border-color: #3b82f6; background: rgba(37,99,235,0.1); }
+body.dark .group-list { background: #0f172a; border-color: #334155; }
+body.dark .group-item { border-color: #1e293b; }
+body.dark .group-item:hover { background: #1a2332; }
+body.dark .upload-zone:hover { background: rgba(37,99,235,0.08); }
+body.dark .syncing { background: #422006; color: #fbbf24; }
+body.dark .loader { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
+body.dark .stat:hover { transform: translateY(-2px); }
+body.dark .badge.bg-same { background: #1e293b; color: #94a3b8; }
+body.dark .badge.bg-new { background: #052e16; color: #4ade80; }
+body.dark .badge.bg-diff { background: #431407; color: #fb923c; }
+body.dark .badge.bg-clone { background: #422006; color: #fbbf24; }
+body.dark .toast { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+body.dark .search-box input { background: #0f172a; }
+body.dark .search-box input:focus { background: #0f172a; }
+body.dark .fg input:read-only, body.dark .fg input[readonly] { background: #1a2332; }
 body.dark::-webkit-scrollbar { width: 8px; }
-body.dark::-webkit-scrollbar-track { background: #1a2a5e; }
-body.dark::-webkit-scrollbar-thumb { background: #2a3f7e; border-radius: 4px; }
+body.dark::-webkit-scrollbar-track { background: #1e293b; }
+body.dark::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+body.dark::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-/* Аура/glow подсветка меню */
-body.dark nav { overflow: visible; }
-body.dark nav a, body.dark nav button {
-  position: relative; z-index: 1;
-  padding: 10px 16px; border-radius: 20px;
-  color: #8ea4d0; text-decoration: none;
-  transition: background 0.3s, box-shadow 0.3s, color 0.3s;
-}
-body.dark nav a:hover, body.dark nav button:hover,
-body.dark nav a.active {
-  background: rgba(74,111,212,0.2);
-  box-shadow: 0 0 20px rgba(74,111,212,0.4), 0 0 40px rgba(74,111,212,0.15), inset 0 0 12px rgba(74,111,212,0.2);
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(255,255,255,0.5);
-}
-</style></style>
+/* === Theme toggle === */
+.theme-toggle { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: 14px; transition: transform 0.3s, opacity 0.3s; opacity: 0.85; padding: 4px; border-radius: 6px; }
+.theme-toggle:hover { transform: scale(1.15); opacity: 1; background: rgba(255,255,255,0.1); }
+body.dark .theme-toggle { color: #fbbf24; opacity: 1; }
+body.dark .theme-toggle:hover { background: rgba(251,191,36,0.1); }
+
+/* === Version badge === */
+.version-badge { display: inline-block; padding: 2px 10px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; backdrop-filter: blur(4px); }
+body.dark .version-badge { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.25); color: #93c5fd; }
+
+</style>
+
 </head>
 <body>
 
 <div id="login-screen" class="card">
-<h2 style="text-align:center;margin-bottom:20px">🌾 AD Ultimate Manager V3.1</h2>
+<div style="text-align:center;margin-bottom:24px"><div style="font-size:42px;margin-bottom:12px">🌾</div><h2 style="font-size:20px;font-weight:700">AD Ultimate Manager</h2><span class="version-badge" style="margin-top:6px;display:inline-block">v3.1</span></div>
 <div class="fg"><label>IP сервера AD</label><input id="l-ip" value="10.0.2.21"></div>
 <div class="fg"><label>Логин AD</label><input id="l-user" placeholder="vardo001"></div>
 <div class="fg"><label>Пароль AD</label><input id="l-pass" type="password"></div>
@@ -155,7 +166,7 @@ body.dark nav a.active {
 </div>
 
 <div id="main-screen">
-<header><h1>🌾 AD Ultimate Manager V3.1</h1><div class="user"><span id="u-name"></span><button onclick="doLogout()">Выход</button></div></header>
+<header><h1>🌾 AD Ultimate Manager <span class="version-badge">v3.1</span></h1><div class="user"><span id="u-name"></span><button onclick="doLogout()">Выход</button></div></header>
 <nav>
   <div class="tab active" data-tab="dash">📊 Обзор</div>
   <div class="tab" data-tab="create">➕ Создать</div>
@@ -165,6 +176,10 @@ body.dark nav a.active {
   <div class="tab" data-tab="reports">📋 Отчёты</div>
   <div class="tab" data-tab="audit">📝 Аудит</div>
   <div class="tab" data-tab="struct">📊 Структура</div>
+  <div class="tab" data-tab="groups">👥 Группы</div>
+  <div class="tab" data-tab="passwords">🔐 Пароли</div>
+  <div class="tab" data-tab="computers">🖥 Компьютеры</div>
+  <div class="tab" data-tab="sms-auth">📱 SMS-Авторизация</div>
 </nav>
 <main>
   <div id="sync-msg" class="syncing">⏳ Синхронизация с AD...</div>
@@ -354,6 +369,119 @@ body.dark nav a.active {
       <div id="struct-table">Загрузите XLSX и нажмите «Сравнить»...</div>
     </div>
   </div>
+
+  <!-- Groups -->
+  <div id="p-groups" class="pane">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>👥 Группы безопасности</h3>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-g btn-sm" onclick="loadGroups()">🔄 Обновить</button>
+          <button class="btn btn-s btn-sm" onclick="showCreateGroup()">➕ Создать группу</button>
+        </div>
+      </div>
+      <div class="search-box" style="margin-bottom:12px">
+        <input type="text" id="groups-search" placeholder="Поиск групп..." oninput="filterGroups(this.value)">
+      </div>
+      <div id="groups-stats" style="margin-bottom:12px"></div>
+      <div id="groups-list" style="max-height:500px;overflow-y:auto">Загрузка...</div>
+    </div>
+
+    <div class="card" id="group-detail-card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 id="group-detail-title">Группа</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-o btn-sm" onclick="showDeleteGroup()">🗑 Удалить</button>
+          <button class="btn btn-p btn-sm" onclick="closeGroupDetail()">✕ Закрыть</button>
+        </div>
+      </div>
+      <div id="group-detail-content">Загрузка...</div>
+    </div>
+
+    <div class="card" id="group-create-card" style="display:none">
+      <h3>➕ Создание группы</h3>
+      <div class="row" style="margin-top:12px">
+        <div class="fg"><label>Имя группы *</label><input id="grp-name" placeholder="my-group-name"></div>
+        <div class="fg"><label>Тип</label><select id="grp-type"><option value="security">Security</option><option value="distribution">Distribution</option></select></div>
+        <div class="fg"><label>Область</label><select id="grp-scope"><option value="global">Global</option><option value="domainlocal">Domain Local</option><option value="universal">Universal</option></select></div>
+      </div>
+      <div class="fg" style="margin-top:8px"><label>Описание</label><input id="grp-desc" placeholder="Назначение группы"></div>
+      <div class="fg" style="margin-top:8px"><label>OU размещения *</label><select id="grp-ou"></select></div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn btn-s" onclick="createGroup()">✅ Создать</button>
+        <button class="btn btn-g" onclick="document.getElementById('group-create-card').style.display='none'">Отмена</button>
+      </div>
+      <div id="grp-create-res" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- Passwords -->
+  <div id="p-passwords" class="pane">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>🔐 Управление паролями</h3>
+        <button class="btn btn-g btn-sm" onclick="loadPasswordReport()">🔄 Обновить</button>
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-p btn-sm" onclick="loadPasswordReport()">📊 Сформировать отчёт</button>
+        <div class="fg" style="flex-direction:row;align-items:center;gap:8px">
+          <label style="text-transform:none;font-size:12px">Показывать за N дней:</label>
+          <input type="number" id="pwd-days" value="30" style="width:60px;padding:4px 8px">
+        </div>
+      </div>
+      <div id="pwd-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+      <div class="search-box" style="margin-bottom:12px">
+        <input type="text" id="pwd-search" placeholder="Поиск по имени или логину..." oninput="filterPasswords(this.value)">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn btn-sm btn-p" onclick="showPwdTab('expiring')" id="pwd-tab-expiring">⏳ Истекают</button>
+        <button class="btn btn-sm btn-g" onclick="showPwdTab('expired')" id="pwd-tab-expired">❌ Просрочены</button>
+        <button class="btn btn-sm btn-g" onclick="showPwdTab('noexpiry')" id="pwd-tab-noexpiry">🚫 Не истекают</button>
+      </div>
+      <div id="pwd-results" style="max-height:500px;overflow-y:auto">Нажмите «Сформировать отчёт»</div>
+    </div>
+  </div>
+
+  <!-- Computers -->
+  <div id="p-computers" class="pane">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>🖥 Компьютерные учётные записи</h3>
+        <button class="btn btn-g btn-sm" onclick="loadComputers()">🔄 Обновить</button>
+      </div>
+      <div class="search-box" style="margin-bottom:12px">
+        <input type="text" id="comp-search" placeholder="Поиск по имени, DNS, описанию..." oninput="filterComputers(this.value)">
+      </div>
+      <div id="comp-stats" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+        <label class="chk"><input type="checkbox" id="comp-hide-disabled" checked onchange="filterComputers()"> Скрыть отключенные</label>
+      </div>
+      <div id="comp-results" style="max-height:500px;overflow-y:auto">Загрузка...</div>
+    </div>
+    <div class="card" id="comp-detail-card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 id="comp-detail-title">Компьютер</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-o btn-sm" onclick="deleteComputer()">🗑 Удалить</button>
+          <button class="btn btn-p btn-sm" onclick="closeCompDetail()">✕ Закрыть</button>
+        </div>
+      </div>
+      <div id="comp-detail-content"></div>
+    </div>
+  </div>
+  <div id="p-sms-auth" class="pane">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>📱 SMS-Авторизация WiFi</h3>
+        <button class="btn btn-g btn-sm" onclick="loadSmsAuth()">🔄 Обновить</button>
+      </div>
+      <div id="sms-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+      <div class="search-box" style="margin-bottom:12px">
+        <input type="text" id="sms-search" placeholder="Поиск по телефону..." oninput="filterSmsAuth(this.value)">
+      </div>
+      <div id="sms-results" style="max-height:500px;overflow:auto">Загрузка...</div>
+    </div>
+  </div>
 </main>
 </div>
 
@@ -370,7 +498,7 @@ const ATTR_NAMES = {
 const REGIONS = { 'RND':'Ростов', 'STV':'Ставрополь', 'KRD':'Краснодар', 'MSK':'Москва', 'NIZ':'Н.Новгород' };
 // Dynamic regions loaded from AD descriptions
 let REGION_NAMES = { ...REGIONS };
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(msg, ok) { const t=document.createElement('div'); t.className='toast '+(ok?'toast-ok':'toast-err'); t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
 function showL(on, msg = 'Загрузка...', prog = null) {
   document.getElementById('loader').style.display = on ? 'flex' : 'none';
@@ -444,6 +572,10 @@ document.querySelectorAll('nav .tab').forEach(t => t.onclick = () => {
   if (t.dataset.tab==='reports') loadReports();
   if (t.dataset.tab==='audit') loadAudit();
   if (t.dataset.tab==='disabled') loadDisabled();
+  if (t.dataset.tab==='groups') loadGroups();
+  if (t.dataset.tab==='passwords') loadPasswordReport();
+  if (t.dataset.tab==='computers') loadComputers();
+  if (t.dataset.tab==='sms-auth') loadSmsAuth();
 });
 
 // Init
@@ -523,6 +655,10 @@ async function loadData() {
   if (activeTab === 'disabled') renderDisabled(document.getElementById('dis-search')?.value || '');
   if (activeTab === 'change' && u_current_sam) openManage(u_current_sam);
   if (activeTab === 'dash') loadDash();
+  if (activeTab === 'groups') loadGroups();
+  if (activeTab === 'passwords') loadPasswordReport();
+  if (activeTab === 'computers') loadComputers();
+  if (activeTab === 'sms-auth') loadSmsAuth();
 
   return r;
 }
@@ -573,7 +709,7 @@ function splitFio(p) {
   document.getElementById(p+'-pn').value = v[2]||'';
   // Auto-generate login + CN
   if (v[0] && p === 'c') {
-    const tr = (t)=>{ const m = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'}; return t.toLowerCase().split('').map(c=>c in m?m[c]:c).join(''); };
+    const tr = (t)=>{ const m = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'}; return t.toLowerCase().split('').map(c=>c in m?m[c]:c).join(''); };
     const up = s => s.replace(/^./, c => c.toUpperCase());
     const login = (tr(v[0]) + '.' + (tr(v[1]||'')[0]||'') + (tr(v[2]||'')[0]||'')).replace(/[^a-z0-9.]/g, '');
     const cn = [up(tr(v[0])), up(tr(v[1]||''))].filter(Boolean).join(' ');
@@ -694,7 +830,8 @@ function openManage(sam) {
   const allGroups = (AD.groups || []).map(g => ({...g, name: g.name || g.dn.split(',')[0].replace('CN=', '')}));
   
   const groupsHtml = allGroups.map(g => {
-    const isMember = (u.memberOf || "").includes(g.dn);
+    const memberOfAll = Array.isArray(u.memberOfList) ? u.memberOfList : (u.memberOf ? [u.memberOf] : []);
+      const isMember = memberOfAll.includes(g.dn);
     return `<label class="group-item" title="${esc(g.dn)}">
       <input type="checkbox" class="m-group-chk" data-dn="${esc(g.dn)}" ${isMember ? 'checked' : ''}>
       <span>${esc(g.name)}</span>
@@ -732,6 +869,8 @@ function openManage(sam) {
       <button class="btn btn-o btn-sm" onclick="reassignSubordinates('${esc(u.sAMAccountName)}','${esc(u.displayName)}')">👥 Переподчинить подчинённых</button>
       <span style="font-size:11px;color:var(--muted)">→ к руководителю этого сотрудника</span>
       <button class="btn btn-p btn-sm" onclick="gatherDepartment('${esc(u.sAMAccountName)}','${esc(u.displayName)}','${esc(u.department||'')}')">🔄 Собрать отдел</button>
+      <button class="btn btn-p btn-sm" onclick="loadUserSessions('${esc(u.sAMAccountName)}')" title="История входов и компьютеры">🖥 Входы</button>
+      <div id="m-sessions" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:8px"></div>
       <span style="font-size:11px;color:var(--muted)">→ подчинить сотрудников отдела этому руководителю</span>
     </div>
     <div class="row">
@@ -823,7 +962,7 @@ async function toggleUser(dn, enable, sam) {
   if (r.success) {
     toast(enable ? '✅ Пользователь включён' : '🔴 Пользователь отключён', true);
     loadData();
-  } else toast(r.error, false);
+  } //r.error, false);
 }
 async function saveUser() {
   const u = AD.users.find(x => x.dn === currentDn);
@@ -1646,8 +1785,517 @@ function filterDisabled(q) {
   renderDisabled(q);
 }
 
+// ─── GROUPS ──────────────────────────────────────────────────────
+let allGroups = [];
+
+async function loadGroups() {
+  document.getElementById('groups-list').innerHTML = '<div class="spin"></div> Загрузка...';
+  try {
+    const r = await api('/api/groups');
+    if (!r.success) throw new Error(r.error);
+    allGroups = r.groups.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    document.getElementById('groups-stats').innerHTML = `<span class="badge bg-new">${allGroups.length} групп</span> <span class="badge bg-same">${allGroups.reduce((s, g) => s + g.memberCount, 0)} участников</span>`;
+    renderGroups(allGroups);
+  } catch (e) {
+    document.getElementById('groups-list').innerHTML = `<span style="color:var(--red)">Ошибка: ${e.message}</span>`;
+  }
+}
+
+function renderGroups(groups) {
+  let h = '<table><tr><th>Группа</th><th>Участников</th><th>Описание</th><th></th></tr>';
+  groups.forEach(g => {
+    h += `<tr onclick="openGroup('${esc(g.dn)}')" style="cursor:pointer">
+      <td><b>${esc(g.name)}</b></td>
+      <td><span class="badge bg-same">${g.memberCount}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${esc(g.description||'').substring(0,80)}</td>
+      <td><button class="btn btn-p btn-sm" onclick="event.stopPropagation();openGroup('${esc(g.dn)}')">👁 Просмотр</button></td>
+    </tr>`;
+  });
+  h += '</table>';
+  if (!groups.length) h = '<div style="text-align:center;padding:20px;color:var(--muted)">Ничего не найдено</div>';
+  document.getElementById('groups-list').innerHTML = h;
+}
+
+function filterGroups(q) {
+  const query = (q || '').toLowerCase();
+  if (!query) return renderGroups(allGroups);
+  renderGroups(allGroups.filter(g => (g.name||'').toLowerCase().includes(query) || (g.description||'').toLowerCase().includes(query)));
+}
+
+async function openGroup(dn) {
+  showL(true, 'Загрузка группы...');
+  try {
+    const r = await api('/api/groups/detail?dn=' + encodeURIComponent(dn));
+    if (!r.success) throw new Error(r.error);
+    const g = r.group;
+    document.getElementById('group-detail-title').textContent = '👥 ' + g.name;
+    let h = `<div class="row" style="margin-bottom:16px">
+      <div class="fg"><label>DN</label><input value="${esc(g.dn)}" readonly></div>
+      <div class="fg"><label>sAMAccountName</label><input value="${esc(g.sam||'')}" readonly></div>
+      <div class="fg"><label>Всего участников</label><input value="${g.memberCount}" readonly></div>
+    </div>`;
+    if (g.description) h += `<div class="fg" style="margin-bottom:12px"><label>Описание</label><input value="${esc(g.description)}" readonly></div>`;
+    h += '<h4 style="margin:12px 0 8px;font-size:13px">Участники (' + g.members.length + '):</h4>';
+    h += '<div style="max-height:300px;overflow-y:auto">';
+    g.members.forEach(m => {
+      const badge = m.type === 'user' ? (m.disabled ? '<span class="badge bg-diff" style="margin-right:6px">🔴</span>' : '<span class="badge bg-new" style="margin-right:6px">🟢</span>') : '<span class="badge bg-same" style="margin-right:6px">👥</span>';
+      h += `<div style="padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;display:flex;align-items:center;gap:8px">
+        ${badge}
+        <b>${esc(m.name||'(неизвестно)')}</b>
+        <span style="color:var(--muted)">${esc(m.sam||'')}</span>
+        ${m.title ? `<span style="font-size:10px;color:var(--text-secondary)">${esc(m.title)}</span>` : ''}
+        ${m.type === 'user' && !m.disabled ? `<button class="btn btn-p btn-sm" style="margin-left:auto;padding:2px 6px;font-size:10px" onclick="editEmptyUser('${esc(m.sam)}')">✏️</button>` : ''}
+      </div>`;
+    });
+    h += '</div>';
+    _currentGroupDn = g.dn;
+    document.getElementById('group-detail-content').innerHTML = h;
+    document.getElementById('group-detail-card').style.display = 'block';
+    document.getElementById('group-detail-card').scrollIntoView({behavior:'smooth'});
+  } catch (e) {
+    toast('Ошибка: ' + e.message, false);
+  }
+  showL(false);
+}
+let _currentGroupDn = '';
+
+function closeGroupDetail() {
+  document.getElementById('group-detail-card').style.display = 'none';
+}
+
+function showDeleteGroup() {
+  if (!_currentGroupDn) return;
+  if (!confirm('Удалить группу ' + _currentGroupDn.split(',')[0].replace(/^CN=/i,'') + '?')) return;
+  showL(true, 'Удаление группы...');
+  api('/api/groups/delete', {method:'POST', body:JSON.stringify({dn:_currentGroupDn})}).then(r => {
+    showL(false);
+    if (r.success) { toast('✅ Группа удалена', true); closeGroupDetail(); loadGroups(); }
+    //'❌ ' + r.error, false);
+  });
+}
+
+function showCreateGroup() {
+  document.getElementById('group-create-card').style.display = 'block';
+  document.getElementById('group-create-card').scrollIntoView({behavior:'smooth'});
+  // Populate OU dropdown from AD data
+  if (AD.ous) {
+    const sel = document.getElementById('grp-ou');
+    sel.innerHTML = '<option value="">-- Выберите OU --</option>' +
+      AD.ous.filter(o => {
+        const dn = (o.dn||'').toUpperCase();
+        return (dn.includes('OU=GROUPS,') || dn.includes('OU=Service Groups')) && dn.split(',').length >= 4;
+      }).map(o => `<option value="${esc(o.dn)}">${esc(o.name)} ${o.desc ? '— ' + esc(o.desc) : ''}</option>`).join('');
+  }
+}
+
+async function createGroup() {
+  const name = document.getElementById('grp-name').value.trim();
+  const desc = document.getElementById('grp-desc').value.trim();
+  const ou = document.getElementById('grp-ou').value;
+  const type = document.getElementById('grp-type').value;
+  const scope = document.getElementById('grp-scope').value;
+  if (!name || !ou) return toast('Имя и OU обязательны', false);
+  showL(true, 'Создание группы...');
+  try {
+    const r = await api('/api/groups/create', {method:'POST', body:JSON.stringify({name, description: desc, ou, type, scope})});
+    showL(false);
+    if (r.success) {
+      toast('✅ Группа создана', true);
+      document.getElementById('group-create-card').style.display = 'none';
+      document.getElementById('grp-name').value = '';
+      document.getElementById('grp-desc').value = '';
+      loadGroups();
+    } else {
+      document.getElementById('grp-create-res').innerHTML = `<div style="color:var(--red);font-size:12px">❌ ${esc(r.error)}</div>`;
+    }
+  } catch(e) {
+    showL(false);
+    toast('Ошибка: ' + e.message, false);
+  }
+}
+
+// ─── PASSWORDS ────────────────────────────────────────────────────
+let pwdData = {expiring:[], expired:[], noExpiry:[]};
+let pwdActiveTab = 'expiring';
+
+async function loadPasswordReport() {
+  const days = document.getElementById('pwd-days').value || 30;
+  showL(true, 'Формирование отчёта по паролям...');
+  try {
+    const r = await api('/api/report/passwords?days=' + days);
+    if (!r.success) throw new Error(r.error);
+    pwdData = r;
+    const s = r.stats;
+    document.getElementById('pwd-stats').innerHTML = `
+      <span class="badge bg-new">${s.total} пользователей</span>
+      <span class="badge bg-diff" onclick="showPwdTab('expiring')" style="cursor:pointer">⏳ ${s.expiring} истекают</span>
+      <span class="badge" style="background:#fef2f2;color:#991b1b;cursor:pointer" onclick="showPwdTab('expired')">❌ ${s.expired} просрочены</span>
+      <span class="badge" style="background:#fef3c7;color:#92400e;cursor:pointer" onclick="showPwdTab('noexpiry')">🚫 ${s.noExpiry} не истекают</span>
+    `;
+    showPwdTab(pwdActiveTab);
+  } catch (e) {
+    document.getElementById('pwd-results').innerHTML = `<span style="color:var(--red)">Ошибка: ${e.message}</span>`;
+  }
+  showL(false);
+}
+
+function showPwdTab(tab) {
+  pwdActiveTab = tab;
+  ['expiring','expired','noexpiry'].forEach(t => {
+    const el = document.getElementById('pwd-tab-' + t);
+    el.className = 'btn btn-sm ' + (t === tab ? 'btn-p' : 'btn-g');
+  });
+  renderPasswords(tab);
+}
+
+function renderPasswords(tab) {
+  const items = pwdData[tab] || [];
+  if (!items.length) {
+    document.getElementById('pwd-results').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Нет данных</div>';
+    return;
+  }
+  let h = '<table><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Пароль</th><th>Действия</th></tr>';
+  items.forEach(u => {
+    let pwdStatus = '';
+    if (tab === 'expired') pwdStatus = `<span class="badge" style="background:#fef2f2;color:#991b1b">Просрочен на ${Math.abs(u.daysUntilExpiry)} дн.</span>`;
+    else if (tab === 'expiring') pwdStatus = `<span class="badge bg-diff">${u.daysUntilExpiry} дн.</span>`;
+    else if (tab === 'noexpiry') pwdStatus = '<span class="badge" style="background:#fef3c7;color:#92400e">🚫 Не истекает</span>';
+    h += `<tr>
+      <td><b>${esc(u.name)}</b></td>
+      <td><code>${esc(u.sam)}</code></td>
+      <td style="font-size:11px">${esc(u.title||'')}</td>
+      <td>${pwdStatus}</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-s btn-sm" style="font-size:10px;padding:2px 6px" onclick="showResetPwd('${esc(u.sam)}','${esc(u.name)}')">🔑 Сброс</button>
+        <button class="btn btn-o btn-sm" style="font-size:10px;padding:2px 6px" onclick="editEmptyUser('${esc(u.sam)}')">✏️</button>
+      </div></td>
+    </tr>`;
+  });
+  h += '</table>';
+  document.getElementById('pwd-results').innerHTML = h;
+}
+
+function filterPasswords(q) {
+  const query = (q || '').toLowerCase();
+  const tab = pwdActiveTab;
+  const items = pwdData[tab] || [];
+  const filtered = query ? items.filter(u => (u.name||'').toLowerCase().includes(query) || (u.sam||'').toLowerCase().includes(query)) : items;
+  if (!filtered.length) {
+    document.getElementById('pwd-results').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Ничего не найдено</div>';
+    return;
+  }
+  let h = '<table><tr><th>ФИО</th><th>Логин</th><th>Должность</th><th>Пароль</th><th>Действия</th></tr>';
+  filtered.forEach(u => {
+    let pwdStatus = '';
+    if (tab === 'expired') pwdStatus = `<span class="badge" style="background:#fef2f2;color:#991b1b">Просрочен на ${Math.abs(u.daysUntilExpiry)} дн.</span>`;
+    else if (tab === 'expiring') pwdStatus = `<span class="badge bg-diff">${u.daysUntilExpiry} дн.</span>`;
+    else if (tab === 'noexpiry') pwdStatus = '<span class="badge" style="background:#fef3c7;color:#92400e">🚫 Не истекает</span>';
+    h += `<tr>
+      <td><b>${esc(u.name)}</b></td>
+      <td><code>${esc(u.sam)}</code></td>
+      <td style="font-size:11px">${esc(u.title||'')}</td>
+      <td>${pwdStatus}</td>
+      <td><button class="btn btn-s btn-sm" style="font-size:10px;padding:2px 6px" onclick="showResetPwd('${esc(u.sam)}','${esc(u.name)}')">🔑 Сброс</button></td>
+    </tr>`;
+  });
+  h += '</table>';
+  document.getElementById('pwd-results').innerHTML = h;
+}
+
+function showResetPwd(sam, name) {
+  const newPwd = prompt('Новый пароль для ' + name + ' (' + sam + '):\\n(мин. 6 символов, рекомендуется 8+ с заглавными, цифрами и спецсимволами)', '');
+  if (!newPwd || newPwd.length < 6) return toast('Пароль должен быть минимум 6 символов', false);
+  const force = confirm('Требовать смену при следующем входе?');
+  showL(true, 'Сброс пароля...');
+  const dn = (AD.users.find(u => u.sAMAccountName === sam)||{}).dn;
+  if (!dn) { showL(false); return toast('Пользователь не найден в кэше', false); }
+  api('/api/password/reset', {method:'POST', body:JSON.stringify({dn, newPassword: newPwd, forceChange: force})}).then(r => {
+    showL(false);
+    if (r.success) toast('✅ Пароль сброшен для ' + sam, true);
+    //'❌ ' + r.error, false);
+  });
+}
+
+// ─── COMPUTERS ────────────────────────────────────────────────────
+let allComputers = [];
+let _compPage = 0, _compPageSize = 200;
+
+async function loadComputers() {
+  document.getElementById('comp-results').innerHTML = '<div class="spin"></div> Загрузка...';
+  try {
+    const r = await api('/api/computers');
+    if (!r.success) throw new Error(r.error);
+    allComputers = r.computers;
+    const s = r.stats;
+    document.getElementById('comp-stats').innerHTML = `
+      <span class="badge bg-new">${s.total} всего</span>
+      <span class="badge bg-same">${s.active} активных</span>
+      <span class="badge bg-diff">${s.inactive90} неактивны >90дн</span>
+    `;
+    filterComputers();
+  } catch (e) {
+    document.getElementById('comp-results').innerHTML = `<span style="color:var(--red)">Ошибка: ${e.message}</span>`;
+  }
+}
+
+function compPage(p) {
+  _compPage = p;
+  filterComputers();
+}
+
+function filterComputers(q) {
+  const query = (q || document.getElementById('comp-search').value || '').toLowerCase();
+  const hideDisabled = document.getElementById('comp-hide-disabled').checked;
+  let items = allComputers;
+  if (hideDisabled) items = items.filter(c => !c.disabled);
+  if (query) items = items.filter(c => (c.cn||'').toLowerCase().includes(query) || (c.sam||'').toLowerCase().includes(query) || (c.os||'').toLowerCase().includes(query) || (c.description||'').toLowerCase().includes(query));
+  renderComputers(items);
+}
+
+function renderComputers(comps) {
+  if (!comps.length) {
+    document.getElementById('comp-results').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Нет данных</div>';
+    return;
+  }
+  let h = '<table><tr><th>Имя</th><th>ОС</th><th>Последний вход</th><th>Пароль (дн.)</th><th>Регион</th><th></th></tr>';
+  comps.slice(0, 500).forEach(c => {
+    const statusIcon = c.disabled ? '🔴' : '🟢';
+    h += `<tr onclick="openComputer('${esc(c.dn)}')" style="cursor:pointer">
+      <td><b>${esc(c.cn)}</b> ${statusIcon}<br><code style="font-size:10px">${esc(c.sam)}</code></td>
+      <td style="font-size:10px">${esc(c.os||'')}</td>
+      <td style="font-size:11px">${c.lastLogonDays !== null ? (c.lastLogonDays > 90 ? `<span style="color:var(--red)">${c.lastLogonDays} дн.</span>` : c.lastLogonDays > 30 ? `<span style="color:var(--warning)">${c.lastLogonDays} дн.</span>` : c.lastLogonDays + ' дн.') : '—'}</td>
+      <td style="font-size:11px">${c.pwdAgeDays !== null ? c.pwdAgeDays + ' дн.' : '—'}</td>
+      <td style="font-size:10px;color:var(--muted)">${c.region||'—'}</td>
+      <td><button class="btn btn-p btn-sm" onclick="event.stopPropagation();openComputer('${esc(c.dn)}')">👁</button></td>
+    </tr>`;
+  });
+  h += '</table>';
+  if (comps.length > _compPageSize) {
+    const totalPages = Math.ceil(comps.length / _compPageSize);
+    if (_compPage >= totalPages) _compPage = 0;
+    const start = _compPage * _compPageSize;
+    const page = comps.slice(start, start + _compPageSize);
+    h = '<table><tr><th>Имя</th><th>ОС</th><th>Последний вход</th><th>Пароль (дн.)</th><th>Регион</th><th></th></tr>';
+    page.forEach(c => {
+      const statusIcon = c.disabled ? '🔴' : '🟢';
+      h += '<tr onclick="openComputer(\'' + esc(c.dn) + '\')" style="cursor:pointer">';
+      h += '<td><b>' + esc(c.cn) + '</b> ' + statusIcon + '<br><code style="font-size:10px">' + esc(c.sam) + '</code></td>';
+      h += '<td style="font-size:10px">' + esc(c.os||'') + '</td>';
+      h += '<td style="font-size:11px">' + (c.lastLogonDays !== null ? (c.lastLogonDays > 90 ? '<span style=\"color:var(--red)\">' + c.lastLogonDays + ' дн.</span>' : c.lastLogonDays > 30 ? '<span style=\"color:var(--warning)\">' + c.lastLogonDays + ' дн.</span>' : c.lastLogonDays + ' дн.') : '-') + '</td>';
+      h += '<td style="font-size:11px">' + (c.pwdAgeDays !== null ? c.pwdAgeDays + ' дн.' : '-') + '</td>';
+      h += '<td style="font-size:10px;color:var(--muted)">' + esc(c.region||'') + '</td>';
+      h += '<td><button class="btn btn-p btn-sm" onclick="event.stopPropagation();openComputer(\'' + esc(c.dn) + '\')">👁</button></td></tr>';
+    });
+    h += '</table>';
+    h += '<div style="display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap">';
+    h += '<button class="btn btn-g btn-sm" onclick="compPage(0)" ' + (_compPage === 0 ? 'disabled' : '') + '>◀◀</button>';
+    h += '<button class="btn btn-g btn-sm" onclick="compPage(' + (_compPage - 1) + ')" ' + (_compPage === 0 ? 'disabled' : '') + '>◀</button>';
+    h += '<span style="font-size:12px;color:var(--muted)">' + (_compPage + 1) + '/' + totalPages + ' (' + comps.length + ')</span>';
+    h += '<button class="btn btn-g btn-sm" onclick="compPage(' + (_compPage + 1) + ')" ' + (_compPage >= totalPages - 1 ? 'disabled' : '') + '>▶</button>';
+    h += '<button class="btn btn-g btn-sm" onclick="compPage(' + (totalPages - 1) + ')" ' + (_compPage >= totalPages - 1 ? 'disabled' : '') + '>▶▶</button>';
+    h += '</div>';
+  }
+  document.getElementById('comp-results').innerHTML = h;
+}
+
+async function openComputer(dn) {
+  showL(true, 'Загрузка информации...');
+  try {
+    const r = await api('/api/computers/detail?dn=' + encodeURIComponent(dn));
+    if (!r.success || !r.computer) throw new Error(r.error||'Не найдено');
+    const c = r.computer;
+    document.getElementById('comp-detail-title').textContent = '🖥 ' + c.cn;
+    let h = `<div class="row">
+      <div class="fg"><label>Имя</label><input value="${esc(c.cn)}" readonly></div>
+      <div class="fg"><label>sAMAccountName</label><input value="${esc(c.sam)}" readonly></div>
+      <div class="fg"><label>DNS</label><input value="${esc(c.dns||'')}" readonly></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>ОС</label><input value="${esc(c.os)} ${esc(c.osVersion||'')}" readonly></div>
+      <div class="fg"><label>Статус</label><input value="${c.disabled ? '🔴 Отключен' : '🟢 Активен'}" readonly></div>
+      <div class="fg"><label>Создан</label><input value="${c.created||'—'}" readonly></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Последний вход</label><input value="${c.lastLogon ? new Date(c.lastLogon).toLocaleString('ru-RU') + ' (' + c.lastLogonDays + ' дн. назад)' : '—'}" readonly></div>
+      <div class="fg"><label>Описание</label><input value="${esc(c.description||'')}" readonly></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Регион</label><input value="${c.region||'—'}" readonly></div>
+      <div class="fg"><label>OU путь</label><input value="${c.ou||'—'}" readonly></div>
+    </div>`;
+    if (c.location) h += `<div class="fg"><label>Расположение</label><input value="${esc(c.location)}" readonly></div>`;
+    if (c.managedByName) h += `<div class="fg"><label>Ответственный</label><input value="${esc(c.managedByName)}" readonly></div>`;
+    if (c.groups && c.groups.length) {
+      h += `<div style="margin-top:12px"><h4 style="font-size:13px;margin-bottom:8px">👥 Группы (${c.groups.length})</h4>`;
+      h += c.groups.map(g => `<span class="badge bg-same" style="margin:2px">${esc(g.name)}</span>`).join('');
+      h += '</div>';
+    }
+    h += `<div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn ${c.disabled?'btn-s':'btn-o'} btn-sm" onclick="toggleComputer('${esc(c.dn)}', ${!c.disabled})">${c.disabled ? '🟢 Включить' : '🔴 Отключить'}</button>
+    </div>`;
+    _currentCompDn = c.dn;
+    document.getElementById('comp-detail-content').innerHTML = h;
+    document.getElementById('comp-detail-card').style.display = 'block';
+    document.getElementById('comp-detail-card').scrollIntoView({behavior:'smooth'});
+  } catch (e) {
+    toast('Ошибка: ' + e.message, false);
+  }
+  showL(false);
+}
+let _currentCompDn = '';
+
+function closeCompDetail() {
+  document.getElementById('comp-detail-card').style.display = 'none';
+}
+
+async function toggleComputer(dn, disable) {
+  showL(true, disable ? 'Отключение...' : 'Включение...');
+  try {
+    const r = await api('/api/computers/toggle', {method:'POST', body:JSON.stringify({dn, enable: !disable})});
+    showL(false);
+    if (r.success) {
+      toast(disable ? '🔴 Компьютер отключён' : '🟢 Компьютер включён', true);
+      openComputer(dn);
+      loadComputers();
+    } //'❌ ' + r.error, false);
+  } catch(e) {
+    showL(false);
+    toast('Ошибка: ' + e.message, false);
+  }
+}
+
+function deleteComputer() {
+  if (!_currentCompDn) return;
+  if (!confirm('Удалить компьютерную учётную запись ' + _currentCompDn.split(',')[0].replace(/^CN=/i,'') + '?')) return;
+  showL(true, 'Удаление...');
+  api('/api/computers/delete', {method:'POST', body:JSON.stringify({dn:_currentCompDn})}).then(r => {
+    showL(false);
+    if (r.success) { toast('✅ Удалён', true); closeCompDetail(); loadComputers(); }
+    //'❌ ' + r.error, false);
+  });
+}
+
+
+// ─── USER SESSIONS / LOGONS TAB ────────────────────────────────
+async function loadUserSessions(sam) {
+  const container = document.getElementById('m-sessions');
+  container.style.display = 'block';
+  container.innerHTML = '<div class="spin"></div> Загрузка...';
+
+  try {
+    const r = await api('/api/user/sessions?sam=' + encodeURIComponent(sam));
+    if (r.error) { container.innerHTML = '<span style="color:var(--red)">' + r.error + '</span>'; return; }
+
+    const logon = r.logon || {};
+    const computers = r.computers || [];
+
+    let html = '<div style="margin-bottom:12px;font-weight:600">🖥 Информация о входах</div>';
+
+    // Login info card
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px">';
+    html += '<div class="fg"><label>Статус</label><input value="' + (logon.isActive ? 'Активен' : 'Отключен') + '" readonly style="font-weight:600;color:' + (logon.isActive ? 'var(--green)' : 'var(--red)') + '"></div>';
+    html += '<div class="fg"><label>Последний вход (lastLogon)</label><input value="' + (logon.lastLogon || '—') + '" readonly></div>';
+    html += '<div class="fg"><label>Последний вход (timestamp)</label><input value="' + (logon.lastLogonTimestamp || '—') + '" readonly></div>';
+    html += '<div class="fg"><label>Дней с последнего входа</label><input value="' + (logon.lastLogonDays !== null ? logon.lastLogonDays + ' дн.' : '—') + '" readonly style="color:' + (logon.lastLogonDays > 90 ? 'var(--red)' : logon.lastLogonDays > 30 ? '#f59e0b' : '') + '"></div>';
+    html += '<div class="fg"><label>Всего входов</label><input value="' + logon.logonCount + '" readonly></div>';
+    html += '<div class="fg"><label>Неудачных попыток</label><input value="' + logon.badPwdCount + '" readonly></div>';
+    html += '<div class="fg"><label>Пароль установлен</label><input value="' + (logon.pwdLastSet || '—') + '" readonly></div>';
+    html += '<div class="fg"><label>Создан</label><input value="' + (logon.whenCreated || '—') + '" readonly></div>';
+    html += '</div>';
+
+    // Computers managed by this user
+    if (computers.length > 0) {
+      html += '<div style="margin-bottom:8px;font-weight:600">🖥 Компьютеры (управление)</div>';
+      html += '<table><tr><th>Имя</th><th>Логин</th><th>ОС</th><th>Статус</th><th>Последний вход</th></tr>';
+      computers.forEach(c => {
+        const statusIcon = c.isActive ? '🟢' : '🔴';
+        html += '<tr><td>' + esc(c.cn) + '</td><td><code>' + esc(c.sam) + '</code></td><td style="font-size:10px">' + esc(c.os) + '</td><td>' + statusIcon + '</td><td style="font-size:11px">' + (c.lastLogon || '—') + '</td></tr>';
+      });
+      html += '</table>';
+    } else {
+      html += '<div style="color:var(--muted);padding:12px;text-align:center">Нет закреплённых компьютеров</div>';
+    }
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<span style="color:var(--red)">Ошибка: ' + e.message + '</span>';
+  }
+}
+
 // Init on load
 checkAuth();
+
+
+// --- SMS AUTH REPORTS ---
+let smsAuthData = [];
+function filterSmsAuth(q) {
+  renderSmsAuthTable(smsAuthData.filter(r => !q || r.phone.includes(q)));
+}
+function renderSmsAuthTable(data) {
+  var el = document.getElementById('sms-results');
+  if (!data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Нет данных</div>';
+    return;
+  }
+  var h = '<table style="font-size:10px;white-space:nowrap"><tr><th>ID</th><th>Телефон</th><th>MAC</th><th>IP клиента</th><th>Точка</th><th>IP точки</th><th>AP</th><th>Отпр</th><th>Подтв</th><th>Автор</th><th>Отправлено</th><th>Авторизовано</th><th>Действия</th></tr>';
+  data.forEach(function(r) {
+    h += '<tr>' +
+      '<td>' + r.id + '</td>' +
+      '<td><b>' + esc(r.phone) + '</b></td>' +
+      '<td><code>' + esc(r.mac) + '</code></td>' +
+      '<td>' + esc(r.ip) + '</td>' +
+      '<td>' + esc(r.hotspot_name||'') + '</td>' +
+      '<td>' + esc(r.hotspot_gw||'') + '</td>' +
+      '<td>' + esc(r.hotspot_ap||'') + '</td>' +
+      '<td>' + (r.code_sent ? '✅' : '❌') + '</td>' +
+      '<td>' + (r.code_verified ? '✅' : '❌') + '</td>' +
+      '<td>' + (r.authorized ? '✅' : '❌') + '</td>' +
+      '<td style="font-size:11px">' + (r.ts_sent ? r.ts_sent.substring(0,19) : '') + '</td>' +
+      '<td style="font-size:11px">' + (r.ts_authorized ? r.ts_authorized.substring(0,19) : '') + '</td>' +
+      '<td><button class="btn btn-o btn-xs" onclick="resetSmsAuth(\'' + esc(r.mac) + '\',\'' + esc(r.phone) + '\')" title="Сбросить авторизацию">🔄 Сброс</button></td>' +
+      '</tr>';
+  });
+  h += '</table>';
+  el.innerHTML = h;
+}
+async function loadSmsAuth() {
+  showL(true, 'Загрузка истории SMS-авторизаций...');
+  try {
+    var hist = await api('/api/sms-auth/history?limit=500');
+    if (!hist.ok) throw new Error(hist.error || 'Ошибка загрузки');
+    smsAuthData = hist.data || [];
+    try {
+      var stats = await api('/api/sms-auth/stats');
+      var s = stats || {};
+      document.getElementById('sms-stats').innerHTML =
+        'Статистика: ' +
+        '<span class="badge bg-new">Всего: ' + (s.total || 0) + '</span> ' +
+        '<span class="badge bg-diff">Кодов отправлено: ' + (s.sent || 0) + '</span> ' +
+        '<span class="badge" style="background:#fef3c7;color:#92400e">Подтверждено: ' + (s.verified || 0) + '</span> ' +
+        '<span class="badge" style="background:#f0fdf4;color:#166534">Авторизовано: ' + (s.authorized || 0) + '</span> ' +
+        '<span class="badge bg-new">Уникальных: ' + (s.unique_phones || 0) + '</span>';
+    } catch(e) {}
+    renderSmsAuthTable(smsAuthData);
+  } catch(e) {
+    document.getElementById('sms-results').innerHTML = '<span style="color:var(--red)">Ошибка: ' + e.message + '</span>';
+  }
+  showL(false);
+}
+function resetSmsAuth(mac, phone) {
+  if (!mac || mac === '00:00:00:00:00:00') return toast('Нет MAC для сброса', false);
+  if (!confirm('Сбросить авторизацию для ' + phone + ' (' + mac + ')?')) return;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/sms-auth/reset?_t=' + Date.now() + '&mac=' + encodeURIComponent(mac) + '&phone=' + encodeURIComponent(phone), true);
+  xhr.withCredentials = true;
+  xhr.onload = function() {
+    if (xhr.status === 200) { toast('Авторизация сброшена', true); loadSmsAuth(); }
+    else toast('Ошибка: ' + xhr.status, false);
+  };
+  xhr.onerror = function() { toast('Ошибка сети', false); };
+  xhr.send();
+}
 </script>
-<script>(function(){var b=document.body;var s=localStorage.getItem("theme");if(s==="dark")b.classList.add("dark");var btn=document.createElement("button");btn.textContent=b.classList.contains("dark")?"☀":"☽";btn.className='theme-toggle';btn.style.cssText="background:none;border:none;font-size:18px;cursor:pointer;margin-left:12px;transition:transform 0.3s;opacity:0.85";btn.onmouseenter=function(){btn.style.transform="scale(1.2)";btn.style.opacity="1"};btn.onmouseleave=function(){btn.style.transform="scale(1)";btn.style.opacity="0.85"};btn.onclick=function(){b.classList.toggle("dark");btn.textContent=b.classList.contains("dark")?"☀":"☽";localStorage.setItem("theme",b.classList.contains("dark")?"dark":"light")};var h=document.querySelector("header");if(h)h.appendChild(btn)})();</script></body>
+<script>(function(){var b=document.body;var s=localStorage.getItem("theme");if(s==="dark")b.classList.add("dark");var btn=document.createElement("button");btn.textContent=b.classList.contains("dark")?"☀":"☽";btn.className='theme-toggle';btn.onmouseenter=function(){btn.style.transform="scale(1.2)";btn.style.opacity="1"};btn.onmouseleave=function(){btn.style.transform="scale(1)";btn.style.opacity="0.85"};btn.onclick=function(){b.classList.toggle("dark");btn.textContent=b.classList.contains("dark")?"☀":"☽";localStorage.setItem("theme",b.classList.contains("dark")?"dark":"light")};var h=document.querySelector("header");if(h)h.appendChild(btn)})();
+
+</body>
 </html>
