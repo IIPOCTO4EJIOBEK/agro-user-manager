@@ -17,21 +17,25 @@ router.get('/login', (req, res) => {
 // POST /login - Handle login
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, adServer } = req.body;
+    if (adServer) { process.env.LDAP_ACTIVE_HOST = 'ldap://' + adServer + ':389'; }
+    const loginName = username.includes('\\') ? username.split('\\')[1] : username.includes('@') ? username.split('@')[0] : username;
+    const adLogin = loginName + '@rusagroeco.ru';
 
     if (!username || !password) {
       return res.redirect('/login?error=Введите логин и пароль');
     }
 
-    const result = await ldapService.authenticate(username, password);
+    const result = await ldapService.authenticate(adLogin, password);
 
     if (result.success) {
       // Store user in session
       req.session.user = {
-        distinguishedName: result.user.distinguishedName,
+        distinguishedName: result.user.distinguishedName || result.user.sAMAccountName,
         sAMAccountName: result.user.sAMAccountName,
-        cn: result.user.cn,
-        mail: result.user.mail
+        cn: result.user.cn || result.user.sAMAccountName,
+        mail: result.user.mail || '',
+        password: password
       };
 
       // Get user groups

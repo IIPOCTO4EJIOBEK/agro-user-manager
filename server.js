@@ -36,13 +36,17 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
-    secure: config.server.env === 'production'
+    secure: false
   }
 }));
 
 // Make user available in all views
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  if (req.session && req.session.user && req.session.user.password) {
+    global.currentBindDN = req.session.user.sAMAccountName.includes('@') ? req.session.user.sAMAccountName : req.session.user.sAMAccountName + '@rusagroeco.ru';
+    global.currentBindPass = req.session.user.password;
+  }
   res.locals.success = req.session.success;
   res.locals.error = req.session.error;
   delete req.session.success;

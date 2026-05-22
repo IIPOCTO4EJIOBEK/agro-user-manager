@@ -15,36 +15,30 @@ class LDAPService {
     this.adminPassword = config.ldap.adminPassword;
   }
 
-  async connect(host = null) {
-    const targetHost = host || this.primaryHost;
+  async connect(host = null, bindUser = null, bindPass = null) {
+    const targetHost = host || process.env.LDAP_ACTIVE_HOST || this.primaryHost;
+    const useUser = bindUser || this.adminDN;
+    const usePass = bindPass || this.adminPassword;
     
     return new Promise((resolve, reject) => {
       const client = ldap.createClient({
         url: targetHost,
-        tlsOptions: {
-          rejectUnauthorized: config.ldap.tlsRejectUnauthorized
-        }
+        tlsOptions: { rejectUnauthorized: false }
       });
 
       client.on('error', (err) => {
         console.error(`LDAP connection error to ${targetHost}:`, err.message);
-        if (!client.connected) {
-          reject(err);
-        }
+        if (!client.connected) { reject(err); }
       });
 
-      client.bind(this.adminDN, this.adminPassword, (err) => {
+      client.bind(useUser, usePass, (err) => {
         if (err) {
           console.error(`LDAP bind error: ${err.message}`);
           client.destroy();
-          
-          // Try secondary if primary failed
           if (targetHost === this.primaryHost && this.secondaryHost) {
             console.log('Falling back to secondary LDAP server...');
-            this.connect(this.secondaryHost).then(resolve).catch(reject);
-          } else {
-            reject(err);
-          }
+            this.connect(this.secondaryHost, bindUser, bindPass).then(resolve).catch(reject);
+          } else { reject(err); }
         } else {
           this.client = client;
           console.log(`Connected to LDAP: ${targetHost}`);
@@ -52,31 +46,28 @@ class LDAPService {
         }
       });
 
-      // Timeout handling
       setTimeout(() => {
-        if (!this.client) {
-          client.destroy();
-          reject(new Error('LDAP connection timeout'));
-        }
+        if (!this.client) { client.destroy(); reject(new Error('LDAP connection timeout')); }
       }, 10000);
     });
   }
 
-  async ensureConnected() {
-    if (!this.client || !this.client.isConnected()) {
-      await this.connect();
+  async ensureConnected(bindUser = null, bindPass = null) {
+    if (!this.client) {
+      await this.connect(null, bindUser, bindPass);
     }
     return this.client;
   }
 
   async searchUsers(filter, attributes = ['cn', 'sAMAccountName', 'mail', 'distinguishedName', 'userAccountControl', 'memberOf']) {
-    const client = await this.ensureConnected();
+    const client = await this.ensureConnected(global.currentBindDN, global.currentBindPass);
     
     return new Promise((resolve, reject) => {
       const opts = {
         scope: 'sub',
         filter: filter,
-        attributes: attributes
+        attributes: attributes,
+        paged: true
       };
 
       const results = [];
@@ -115,27 +106,21 @@ class LDAPService {
 
   async authenticate(username, password) {
     try {
-      const user = await this.getUserBySAM(username);
-      if (!user) {
-        return { success: false, message: 'User not found' };
-      }
-
-      const userDN = user.distinguishedName;
+      const host = process.env.LDAP_ACTIVE_HOST || this.primaryHost;
+      const upn = username.includes('@') ? username : username + '@rusagroeco.ru';
       
       return new Promise((resolve) => {
         const client = ldap.createClient({
-          url: this.primaryHost,
-          tlsOptions: {
-            rejectUnauthorized: config.ldap.tlsRejectUnauthorized
-          }
+          url: host,
+          tlsOptions: { rejectUnauthorized: false }
         });
 
-        client.bind(userDN, password, (err) => {
+        client.bind(upn, password, (err) => {
           client.destroy();
           if (err) {
             resolve({ success: false, message: 'Invalid credentials' });
           } else {
-            resolve({ success: true, user: user });
+            resolve({ success: true, user: { sAMAccountName: username, distinguishedName: upn } });
           }
         });
 

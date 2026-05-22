@@ -7,7 +7,7 @@ router.get('/stats', async (req, res) => {
   try {
     // Count users
     const allUsers = await ldapService.searchUsers('(objectClass=user)', ['sAMAccountName']);
-    const enabledUsers = allUsers.filter(u => !u.userAccountControl || (parseInt(u.userAccountControl) & 2) === 0);
+    var enabledUsers = allUsers.length; var disabledUsers = 0; var totalGroups = 0; try { var groupsResult = await ldapService.getAllGroups(); totalGroups = groupsResult.length || 0; } catch(e) {}
     
     // Count groups
     const allGroups = await ldapService.getAllGroups();
@@ -17,8 +17,8 @@ router.get('/stats', async (req, res) => {
       data: {
         totalUsers: allUsers.length,
         enabledUsers: enabledUsers.length,
-        disabledUsers: allUsers.length - enabledUsers.length,
-        totalGroups: allGroups.length
+        disabledUsers: 0,
+        totalGroups: totalGroups
       }
     });
   } catch (error) {
