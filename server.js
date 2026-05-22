@@ -626,6 +626,14 @@ app.get('/api/audit/download', isAuthenticated, async (req, res) => {
 });
 
 
+app.get('/auth/check', async (req, res) => {
+  if (req.session && req.session.user) {
+    res.json({ success: true, user: req.session.user.sAMAccountName });
+  } else {
+    res.json({ success: false });
+  }
+});
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',
