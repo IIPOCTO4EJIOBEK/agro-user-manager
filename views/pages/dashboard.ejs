@@ -1,29 +1,35 @@
 <%- include('../partials/header', { activePage: 'dashboard' }) %>
-<div class="dashboard">
-  <div class="stats-grid">
-    <div class="stat-card"><div class="num" id="totalUsers">-</div><div class="lbl">Пользователей в AD</div></div>
-    <div class="stat-card"><div class="num" id="enabledUsers">-</div><div class="lbl">Активных пользователей</div></div>
-    <div class="stat-card"><div class="num" id="disabledUsers">-</div><div class="lbl">Отключенных пользователей</div></div>
-    <div class="stat-card"><div class="num" id="totalGroups">-</div><div class="lbl">Групп безопасности</div></div>
-  </div>
-
-  <h3 style="margin:24px 0 16px"><i class="fas fa-bolt"></i> Быстрые действия</h3>
-  <div class="quick-actions">
-    <a href="/users"><i class="fas fa-users" style="background:var(--primary-light);color:var(--primary)"></i> Управление пользователями</a>
-    <a href="/wifi"><i class="fas fa-wifi" style="background:var(--success-light);color:var(--success)"></i> WiFi & SMS</a>
-    <a href="/monitoring"><i class="fas fa-chart-line" style="background:var(--warning-light);color:var(--warning)"></i> Мониторинг</a>
-    <a href="/settings"><i class="fas fa-cog" style="background:#f3e8ff;color:#9333ea"></i> Настройки</a>
-  </div>
-
-  <div class="card" style="margin-top:24px">
-    <h3><i class="fas fa-server"></i> Состояние системы</h3>
-    <div id="systemStatus"><div class="spinner"></div> Загрузка...</div>
-  </div>
+<div class="stats">
+  <div class="stat"><div class="num" id="totalUsers">-</div><div class="lbl">Пользователей в AD</div></div>
+  <div class="stat"><div class="num" id="enabledUsers">-</div><div class="lbl">Активных пользователей</div></div>
+  <div class="stat"><div class="num" id="disabledUsers">-</div><div class="lbl">Отключенных пользователей</div></div>
+  <div class="stat"><div class="num" id="totalGroups">-</div><div class="lbl">Групп безопасности</div></div>
 </div>
+
+<div class="row" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+  <a href="/users" class="card" style="display:flex;align-items:center;gap:16px;text-decoration:none"><span style="font-size:32px">👤</span><div><b>Пользователи</b><br><span style="font-size:12px;color:var(--text-secondary)">Управление учётными записями</span></div></a>
+  <a href="/wifi" class="card" style="display:flex;align-items:center;gap:16px;text-decoration:none"><span style="font-size:32px">📶</span><div><b>WiFi & SMS</b><br><span style="font-size:12px;color:var(--text-secondary)">Гостевая сеть и авторизация</span></div></a>
+  <a href="/computers" class="card" style="display:flex;align-items:center;gap:16px;text-decoration:none"><span style="font-size:32px">🖥</span><div><b>Компьютеры</b><br><span style="font-size:12px;color:var(--text-secondary)">Устройства в домене</span></div></a>
+  <a href="/groups" class="card" style="display:flex;align-items:center;gap:16px;text-decoration:none"><span style="font-size:32px">👥</span><div><b>Группы</b><br><span style="font-size:12px;color:var(--text-secondary)">Группы безопасности</span></div></a>
+</div>
+
+<div class="card">
+  <h3>📡 Состояние системы</h3>
+  <div id="systemStatus"><span class="spinner"></span> Загрузка...</div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  fetch('/api/monitoring/stats').then(r=>r.json()).then(d=>{if(d.success){document.getElementById('totalUsers').textContent=d.data.totalUsers;document.getElementById('enabledUsers').textContent=d.data.enabledUsers;document.getElementById('disabledUsers').textContent=d.data.disabledUsers;document.getElementById('totalGroups').textContent=d.data.totalGroups;}}).catch(()=>{});
-  fetch('/api/settings/ldap-status').then(r=>r.json()).then(d=>{document.getElementById('systemStatus').innerHTML=d.success&&d.data.connected?'<span style="color:var(--success)"><i class="fas fa-check-circle"></i> LDAP подключен: '+d.data.domainName || d.data.domain+'</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: '+(d.data&&d.data.error||'Ошибка')+'</span>';}).catch(()=>{document.getElementById('systemStatus').innerHTML='<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</span>';});
+fetch('/api/monitoring/stats').then(function(r){return r.json()}).then(function(d){
+  if(!d.success)return;
+  document.getElementById('totalUsers').textContent = d.data.totalUsers;
+  document.getElementById('enabledUsers').textContent = d.data.enabledUsers;
+  document.getElementById('disabledUsers').textContent = d.data.disabledUsers;
+  document.getElementById('totalGroups').textContent = d.data.totalGroups;
 });
+fetch('/api/settings/ldap-status').then(function(r){return r.json()}).then(function(d){
+  var el = document.getElementById('systemStatus');
+  if(d.success&&d.data.connected) el.innerHTML = '<span style="color:var(--success)">✅ LDAP подключен: ' + (d.data.domainName||'rusagroeco.ru') + '</span>';
+  else el.innerHTML = '<span style="color:var(--danger)">❌ LDAP не подключен</span>';
+}).catch(function(){document.getElementById('systemStatus').innerHTML = '<span style="color:var(--danger)">❌ Ошибка</span>';});
 </script>
 <%- include('../partials/footer') %>
