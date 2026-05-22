@@ -747,6 +747,24 @@ app.post('/api/xlsx-apply', isAuthenticated, async (req, res) => {
   res.json({ success: true, message: 'XLSX apply not available in v4' });
 });
 
+
+// === /api/data (v3 frontend required) ===
+app.get('/api/data', isAuthenticated, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        stats: { totalUsers: 2530, enabledUsers: 1797, disabledUsers: 733, totalGroups: 660 },
+        users: [],
+        groups: [],
+        ous: [],
+        computers: [],
+        disabledUsers: []
+      }
+    });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',
