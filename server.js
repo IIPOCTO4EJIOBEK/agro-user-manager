@@ -492,7 +492,7 @@ app.get('/', function(req,res){ if(req.session&&req.session.user) res.redirect('
 
 
 // === RESYNC ===
-app.get('/api/resync', isAuthenticated, async (req, res) => {
+app.post('/api/resync', isAuthenticated, async (req, res) => {
   try { res.json({ success: true, message: 'OK' }); }
   catch(e) { res.json({ success: false, message: e.message }); }
 });
