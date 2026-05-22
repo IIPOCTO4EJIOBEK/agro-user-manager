@@ -90,7 +90,7 @@ async function loadADData(req) {
     cache = {
       users: users.sort((a, b) => (getAttr(a, 'displayName') || '').localeCompare(getAttr(b, 'displayName') || '')),
       ous: ous.map(o => ({ name: getAttr(o, 'ou'), dn: o.dn, desc: getAttr(o, 'description') })).filter(o => o.dn).sort((a, b) => a.dn.length - b.dn.length),
-      groups: groups.map(g => ({ name: getAttr(g, 'cn'), dn: g.dn, desc: getAttr(g, 'description'), memberCount: Array.isArray(g.member) ? g.member.length : (g.member ? 1 : 0) })).filter(g => g.dn).sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+      groups: groups.map(g => ({ name: getAttr(g, 'cn'), dn: g.dn, description: getAttr(g, 'description'), memberCount: Array.isArray(g.member) ? g.member.length : (g.member ? 1 : 0) })).filter(g => g.dn).sort((a, b) => (a.name || '').localeCompare(b.name || '')),
       computers: computers.map(c => ({ cn: getAttr(c, 'cn'), dn: c.dn, dns: getAttr(c, 'dNSHostName'), os: getAttr(c, 'operatingSystem'), sp: getAttr(c, 'operatingSystemServicePack'), desc: getAttr(c, 'description'), uac: getAttr(c, 'userAccountControl'), lastLogon: getAttr(c, 'lastLogon'), whenCreated: getAttr(c, 'whenCreated') })),
       depts: Array.from(depts).sort(),
       comps: Array.from(comps).sort(),
@@ -285,7 +285,7 @@ router.get('/report/passwords', isAuth, async (req, res) => {
   res.json({
     success: true,
     stats: { total: cache.users.length, expiring: expiring.length, expired: expired.length, noExpiry: noExpiry.length },
-    expiring, expired, noExpiry,
+    expiring: expiring, expired: expired, noExpiry: noExpiry, noexpiry: noExpiry,
     total: cache.users.length
   });
 });
@@ -309,36 +309,117 @@ router.get('/xlsx-view', isAuth, async (req, res) => {
   res.json({ success: true, rows, total: rows.length });
 });
 
-// GET /api/audit - recent audit log
+// GET /api/audit - recent audit log (v3 expects array with ts, operator, action, target, details)
 router.get('/audit', isAuth, async (req, res) => {
-  // Return empty array if no audit DB configured
-  res.json([]);
+  const dbPath = '/opt/agro-user-manager-v3/data/audit.db';
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(dbPath, { readonly: true });
+    const rows = db.prepare('SELECT * FROM audit ORDER BY id DESC LIMIT 100').all();
+    db.close();
+    return res.json(rows);
+  } catch(e) {
+    res.json([]);
+  }
 });
 
-// GET /api/ous - OU list
-router.get('/ous', isAuth, async (req, res) => {
-  if (!cache.ous.length) await loadADData(req);
-  const byRegion = {};
-  cache.ous.forEach(o => {
-    const dn = o.dn.toUpperCase();
-    const parts = dn.split(',');
-    let region = 'OTHER';
-    for (const p of parts) {
-      const trimmed = p.trim();
-      if (trimmed.startsWith('OU=') && ['RND','STV','KRD','MSK','NIZ','VRN','VLC','BDN','LPK'].includes(trimmed.substring(3))) {
-        region = trimmed.substring(3);
-        break;
-      }
-    }
-    if (!byRegion[region]) byRegion[region] = [];
-    if (dn.includes('OU=USERS') || dn.includes('OU=Users')) {
-      byRegion[region].push({ name: o.name, dn: o.dn });
+// GET /api/audit/operators
+router.get('/audit/operators', isAuth, async (req, res) => {
+  const dbPath = '/opt/agro-user-manager-v3/data/audit.db';
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(dbPath, { readonly: true });
+    const rows = db.prepare('SELECT DISTINCT operator FROM audit ORDER BY operator').all();
+    db.close();
+    return res.json(rows.map(r => r.operator));
+  } catch(e) {
+    res.json([]);
+  }
+});
+
+// GET /api/audit/download
+router.get('/audit/download', isAuth, async (req, res) => {
+  const dbPath = '/opt/agro-user-manager-v3/data/audit.db';
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database(dbPath, { readonly: true });
+    const op = req.query.operator;
+    const rows = op
+      ? db.prepare('SELECT * FROM audit WHERE operator = ? ORDER BY id DESC').all(op)
+      : db.prepare('SELECT * FROM audit ORDER BY id DESC').all();
+    db.close();
+    let csv = 'ts;operator;action;target;details\n';
+    rows.forEach(r => csv += `${r.ts};${r.operator};${r.action};${r.target};${(r.details||'').replace(/"/g,'""')}\n`);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=audit.csv');
+    res.send('\uFEFF' + csv);
+  } catch(e) {
+    res.status(500).send('Audit DB not available');
+  }
+});
+
+// GET /api/report/duplicates - find duplicate displayName users
+router.get('/report/duplicates', isAuth, async (req, res) => {
+  if (!cache.users.length) await loadADData(req);
+  const nameMap = {};
+  cache.users.forEach(u => {
+    const name = getAttr(u, 'displayName');
+    if (!name) return;
+    if (!nameMap[name]) nameMap[name] = [];
+    nameMap[name].push({ sam: getAttr(u, 'sAMAccountName'), dn: u.dn });
+  });
+  const dupes = Object.entries(nameMap).filter(([, users]) => users.length > 1).map(([name, users]) => ({ name, users }));
+  res.json(dupes);
+});
+
+// GET /api/report/empty-attrs - find users with empty attributes
+router.get('/report/empty-attrs', isAuth, async (req, res) => {
+  if (!cache.users.length) await loadADData(req);
+  const attrs = ['title', 'department', 'company', 'manager', 'mail', 'l', 'telephoneNumber', 'mobile'];
+  const result = [];
+  cache.users.forEach(u => {
+    const empty = attrs.filter(a => !getAttr(u, a));
+    if (empty.length) {
+      result.push({ name: getAttr(u, 'displayName'), sam: getAttr(u, 'sAMAccountName'), dn: u.dn, empty });
     }
   });
-  res.json({ regions: byRegion, all: cache.ous.filter(o => {
-    const dn = o.dn.toUpperCase();
-    return dn.includes('OU=USERS') || dn.includes('OU=Users');
-  }).map(o => ({ name: o.name, dn: o.dn })) });
+  res.json(result);
+});
+
+// GET /api/search-user - search users from cache
+router.get('/search-user', isAuth, async (req, res) => {
+  if (!cache.users.length) await loadADData(req);
+  const q = (req.query.q || '').toLowerCase();
+  if (!q) return res.json([]);
+  const results = cache.users.filter(u =>
+    (getAttr(u, 'displayName') || '').toLowerCase().includes(q) ||
+    (getAttr(u, 'sAMAccountName') || '').toLowerCase().includes(q) ||
+    (getAttr(u, 'title') || '').toLowerCase().includes(q)
+  ).slice(0, 50).map(u => ({
+    dn: u.dn, displayName: getAttr(u, 'displayName'), sAMAccountName: getAttr(u, 'sAMAccountName'),
+    title: getAttr(u, 'title'), department: getAttr(u, 'department'), company: getAttr(u, 'company'),
+    mail: getAttr(u, 'mail'), manager: getAttr(u, 'manager'), l: getAttr(u, 'l'),
+    userAccountControl: getAttr(u, 'userAccountControl'),
+    memberOf: getAttr(u, 'memberOf') || [],
+    description: getAttr(u, 'description'), mobile: getAttr(u, 'mobile'),
+    telephoneNumber: getAttr(u, 'telephoneNumber')
+  }));
+  res.json(results);
+});
+
+// GET /api/computers/detail
+router.get('/computers/detail', isAuth, async (req, res) => {
+  if (!cache.computers.length) await loadADData(req);
+  const dn = req.query.dn;
+  if (!dn) return res.json({ success: false, error: 'DN required' });
+  const comp = cache.computers.find(c => c.dn === dn);
+  if (!comp) return res.json({ success: false, error: 'Computer not found' });
+  res.json({ success: true, computer: comp });
+});
+
+// GET /api/user/sessions
+router.get('/user/sessions', isAuth, async (req, res) => {
+  res.json({ success: true, sessions: [] });
 });
 
 module.exports = router;
