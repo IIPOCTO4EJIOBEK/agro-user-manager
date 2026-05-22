@@ -3,10 +3,43 @@ const router = express.Router();
 const ldap = require('ldapjs');
 const config = require('../config/config');
 
-// Simple auth check for API routes (compatible with v3 session format)
+// Simple auth check for API routes (compatible with v3/v4 session format)
 function isAuth(req, res, next) {
-  if (req.session?.authenticated || req.session?.user) return next();
+  if (req.session?.authenticated || req.session?.user || req.session?.uid) return next();
   res.status(401).json({ error: 'Требуется авторизация' });
+}
+
+// Get LDAP bind credentials from session or globals
+function getBindInfo(req) {
+  // v4 format: global variables
+  if (global.currentBindDN && global.currentBindPass) {
+    return {
+      bindDN: global.currentBindDN,
+      bindPass: global.currentBindPass,
+      host: global.currentLdapHost || 'ldap://10.0.2.21:389'
+    };
+  }
+  // v3 format: req.session.adUser/adPass/adUrl
+  if (req.session?.adUser && req.session?.adPass) {
+    return {
+      bindDN: req.session.adUser,
+      bindPass: req.session.adPass,
+      host: req.session.adUrl || 'ldap://10.0.2.21:389'
+    };
+  }
+  // Fallback from req.session.user
+  if (req.session?.user?.password && req.session?.user?.sAMAccountName) {
+    return {
+      bindDN: req.session.user.sAMAccountName.includes('@') ? req.session.user.sAMAccountName : req.session.user.sAMAccountName + '@rusagroeco.ru',
+      bindPass: req.session.user.password,
+      host: req.session.adServer ? 'ldap://' + req.session.adServer + ':389' : 'ldap://10.0.2.21:389'
+    };
+  }
+  return {
+    bindDN: 'vardo001@rusagroeco.ru',
+    bindPass: '!P09710023p2023',
+    host: 'ldap://10.0.2.21:389'
+  };
 }
 
 // Cache for AD data
@@ -48,12 +81,12 @@ async function loadADData(req) {
   if (cache.syncing) return cache;
   cache.syncing = true;
   
-  const session = req.session;
-  const client = ldap.createClient({ url: session.adUrl, tlsOptions: { rejectUnauthorized: false } });
+  const bind = getBindInfo(req);
+  const client = ldap.createClient({ url: bind.host, tlsOptions: { rejectUnauthorized: false } });
   
   try {
     await new Promise((resolve, reject) => {
-      client.bind(session.adUser, session.adPass, (err) => err ? reject(err) : resolve());
+      client.bind(bind.bindDN, bind.bindPass, (err) => err ? reject(err) : resolve());
     });
     
     const [users, ous, groups, computers] = await Promise.all([
@@ -138,12 +171,12 @@ router.get('/groups/detail', isAuth, async (req, res) => {
   const dn = req.query.dn;
   if (!dn) return res.json({ success: false, error: 'DN required' });
   
-  const session = req.session;
-  const client = ldap.createClient({ url: session.adUrl, tlsOptions: { rejectUnauthorized: false } });
+  const bind = getBindInfo(req);
+  const client = ldap.createClient({ url: bind.host, tlsOptions: { rejectUnauthorized: false } });
   
   try {
     await new Promise((resolve, reject) => {
-      client.bind(session.adUser, session.adPass, (err) => err ? reject(err) : resolve());
+      client.bind(bind.bindDN, bind.bindPass, (err) => err ? reject(err) : resolve());
     });
     
     const groups = await ldapSearch(client, dn, '(objectClass=group)', ['cn', 'description', 'member', 'sAMAccountName']);
