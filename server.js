@@ -500,6 +500,132 @@ app.get('/api/resync', isAuthenticated, async (req, res) => {
 // === PASSWORDS PAGE ===
 app.get('/passwords', isAuthenticated, function(req,res){ res.render('pages/passwords', { title: 'Управление паролями', user: req.session.user, activePage: 'passwords' }); });
 
+
+
+// === GROUP CREATE ===
+app.post('/api/groups/create', isAuthenticated, async (req, res) => {
+  try {
+    const { cn, ou, description } = req.body;
+    if (!cn) return res.json({ success: false, message: 'Group name required' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const targetOU = ou || 'OU=Service Groups,OU=Groups,DC=rusagroeco,DC=ru';
+    const dn = 'CN=' + cn + ',' + targetOU;
+    var ldif = 'dn: ' + dn + '\nobjectClass: group\ncn: ' + cn + '\nsAMAccountName: ' + cn.replace(/[^a-zA-Z0-9]/g,'') + '\ngroupType: 2147483650\n';
+    if (description) ldif += 'description: ' + description + '\n';
+    var tmp = '/tmp/grpc_' + Date.now() + '.ldif';
+    require('fs').writeFileSync(tmp, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmp + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmp);
+    res.json({ success: true, message: 'Group created', dn: dn });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === GROUP DELETE ===
+app.delete('/api/groups/delete', isAuthenticated, async (req, res) => {
+  try {
+    const { dn } = req.body;
+    if (!dn) return res.json({ success: false, message: 'DN required' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    var tmp = '/tmp/grpd_' + Date.now() + '.ldif';
+    var ldif = 'dn: ' + dn + '\nchangetype: delete\n';
+    require('fs').writeFileSync(tmp, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmp + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmp);
+    res.json({ success: true, message: 'Group deleted' });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === COMPUTER TOGGLE ===
+app.patch('/api/computers/toggle', isAuthenticated, async (req, res) => {
+  try {
+    const { dn, enable } = req.body;
+    if (!dn) return res.json({ success: false, message: 'DN required' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    var uacValue = enable ? '4096' : '4098';
+    var tmp = '/tmp/comp_' + Date.now() + '.ldif';
+    var ldif = 'dn: ' + dn + '\nchangetype: modify\nreplace: userAccountControl\nuserAccountControl: ' + uacValue + '\n';
+    require('fs').writeFileSync(tmp, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmp + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmp);
+    res.json({ success: true, message: 'Computer ' + (enable?'enabled':'disabled') });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === COMPUTER DELETE ===
+app.delete('/api/computers/delete', isAuthenticated, async (req, res) => {
+  try {
+    const { dn } = req.body;
+    if (!dn) return res.json({ success: false, message: 'DN required' });
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    var tmp = '/tmp/compd_' + Date.now() + '.ldif';
+    var ldif = 'dn: ' + dn + '\nchangetype: delete\n';
+    require('fs').writeFileSync(tmp, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmp + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmp);
+    res.json({ success: true, message: 'Computer deleted' });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+
+// === AUDIT ===
+const Database = require('better-sqlite3');
+const AUDIT_DB = '/opt/manager-v4/data/audit.db';
+var auditDb;
+try { auditDb = new Database(AUDIT_DB); auditDb.pragma('journal_mode=WAL'); } catch(e) { auditDb = null; }
+
+function auditLog(operator, action, target, details) {
+  try { if(auditDb) auditDb.prepare('INSERT INTO audit (operator,action,target,details) VALUES (?,?,?,?)').run(operator||'system', action||'', target||'', JSON.stringify(details||{})); } catch(e){}
+}
+
+app.get('/api/audit', isAuthenticated, async (req, res) => {
+  try {
+    var db = new Database(AUDIT_DB);
+    var limit = parseInt(req.query.limit) || 100;
+    var offset = parseInt(req.query.offset) || 0;
+    var opFilter = req.query.operator || '';
+    var q = 'SELECT * FROM audit';
+    var params = [];
+    if(opFilter){q += ' WHERE operator LIKE ?'; params.push('%'+opFilter+'%');}
+    q += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    var rows = db.prepare(q).all.apply(db, params);
+    var totalRow = db.prepare('SELECT COUNT(*) as c FROM audit'+(opFilter?' WHERE operator LIKE ?':'')).get(opFilter?'%'+opFilter+'%':undefined);
+    db.close();
+    res.json({ success: true, data: rows, total: totalRow ? totalRow.c : 0 });
+  } catch(e) { res.json({ success: false, data: [], total: 0 }); }
+});
+
+app.get('/api/audit/operators', isAuthenticated, async (req, res) => {
+  try {
+    var db = new Database(AUDIT_DB);
+    var rows = db.prepare('SELECT DISTINCT operator FROM audit ORDER BY operator').all();
+    db.close();
+    res.json({ success: true, data: rows.map(function(r){return r.operator;}) });
+  } catch(e) { res.json({ success: false, data: [] }); }
+});
+
+app.get('/api/audit/download', isAuthenticated, async (req, res) => {
+  try {
+    var db = new Database(AUDIT_DB);
+    var rows = db.prepare('SELECT * FROM audit ORDER BY id DESC').all();
+    db.close();
+    var csv = 'ID;TS;Operator;Action;Target;Details\n';
+    rows.forEach(function(r){ csv += r.id+';'+r.ts+';'+r.operator+';'+r.action+';'+r.target+';'+(r.details||'')+'\n'; });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=audit_log.csv');
+    res.send('\uFEFF'+csv);
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',

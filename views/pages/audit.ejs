@@ -1,6 +1,44 @@
 <%- include('../partials/header', { activePage: 'audit' }) %>
 <div class="card">
-  <h3><i class="fas fa-history"></i> Аудит действий</h3>
-  <div id="audit-list"><div class="empty-state"><i class="fas fa-history"></i><p>Модуль аудита ожидает настройки БД</p></div></div>
+  <h3>📝 Аудит действий</h3>
+  <div class="row" style="margin-bottom:16px">
+    <div class="fg">
+      <label>Фильтр по оператору</label>
+      <select id="audit-op" onchange="loadAudit()"><option value="">Все</option></select>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px">
+      <button class="btn btn-p" onclick="loadAudit()">🔍 Обновить</button>
+      <a href="/api/audit/download" class="btn btn-o">📥 Скачать CSV</a>
+    </div>
+  </div>
+  <div id="audit-table-wrap" style="overflow-x:auto"><div class="spinner"></div> Загрузка...</div>
 </div>
+<script>
+function loadAudit(){
+  var op = document.getElementById('audit-op').value;
+  var url = '/api/audit?limit=200';
+  if(op) url += '&operator=' + encodeURIComponent(op);
+  document.getElementById('audit-table-wrap').innerHTML = '<div class="spinner"></div> Загрузка...';
+  fetch(url).then(function(r){return r.json()}).then(function(d){
+    if(!d.success||!d.data){document.getElementById('audit-table-wrap').innerHTML='<div class="empty-state"><i class="fas fa-history"></i><p>Нет записей</p></div>';return;}
+    var h = '<p style="margin-bottom:8px;color:var(--text-secondary);font-size:12px">Всего: ' + d.total + ' записей</p>' +
+      '<table><tr><th>ID</th><th>Дата</th><th>Оператор</th><th>Действие</th><th>Цель</th></tr>';
+    d.data.forEach(function(r){
+      h += '<tr><td style="font-size:11px">' + r.id + '</td><td style="font-size:11px">' + (r.ts||'') + '</td>' +
+        '<td>' + esc(r.operator||'') + '</td><td>' + esc(r.action||'') + '</td><td style="font-size:11px">' + esc(r.target||'') + '</td></tr>';
+    });
+    h += '</table>';
+    document.getElementById('audit-table-wrap').innerHTML = h;
+  }).catch(function(e){document.getElementById('audit-table-wrap').innerHTML='Ошибка: '+e.message;});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// Load operators and audit
+fetch('/api/audit/operators').then(function(r){return r.json()}).then(function(d){
+  if(d.success&&d.data){
+    var sel = document.getElementById('audit-op');
+    d.data.forEach(function(op){sel.innerHTML += '<option value="'+esc(op)+'">'+esc(op)+'</option>';});
+  }
+});
+loadAudit();
+</script>
 <%- include('../partials/footer') %>
