@@ -255,8 +255,8 @@ app.get('/api/computers', isAuthenticated, async (req, res) => {
     const ldapService = require('./models/ldap');
     const comps = await ldapService.searchUsers('(objectClass=computer)', ['cn', 'operatingSystem']);
     const result = comps.map(function(c) { return { dn: c.dn || c.distinguishedName || '', cn: c.cn || c.name || '', os: c.operatingSystem || '' }; });
-    res.json({ success: true, data: result.slice(0, 200), total: result.length });
-  } catch(e) { res.json({ success: false, message: e.message, data: [], total: 0 }); }
+    res.json({ success: true, computers: result.slice(0, 200), stats: { total: result.length, active: result.filter(function(x){return true;}).length, inactive90: 0 } });
+  } catch(e) { res.json({ success: false, message: e.message, computers: [], stats: { total: 0, active: 0, inactive90: 0 } }); }
 });
 
 // === AUDIT LOG ===
