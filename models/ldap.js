@@ -67,7 +67,7 @@ class LDAPService {
       const opts = {
         scope: 'sub',
         filter: filter,
-        attributes: attributes,
+        attributes: attributes, sizeLimit: 2000,
         paged: true
       };
 
@@ -79,7 +79,7 @@ class LDAPService {
         }
 
         res.on('searchEntry', (entry) => {
-          results.push(entry.object);
+          if (entry.object) { results.push(entry.object); } else if (entry.pojo && entry.pojo.attributes) { var obj = {}; entry.pojo.attributes.forEach(function(a) { obj[a.type] = a.values.length === 1 ? a.values[0] : a.values; }); obj.dn = entry.pojo.objectName; results.push(obj); }
         });
 
         res.on('error', (err) => {
