@@ -25,6 +25,13 @@
 
       <form action="/login?returnTo=<%= returnTo %>" method="POST" class="login-form">
         <div class="form-group">
+        <div class="form-group">
+          <label for="adServer"><i class="fas fa-server"></i> Сервер AD</label>
+          <select id="adServer" name="adServer" class="form-control">
+            <option value="10.1.20.21">10.1.20.21 (основной)</option>
+            <option value="10.0.2.21">10.0.2.21 (резервный)</option>
+          </select>
+        </div>
           <label for="username">
             <i class="fas fa-user"></i>
             Имя пользователя

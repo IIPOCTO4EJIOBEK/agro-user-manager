@@ -1,23 +1,135 @@
 <%- include('../partials/header', { activePage: 'users' }) %>
 <div class="card">
   <div class="row" style="margin-bottom:16px">
-    <div class="fg">
-      <input type="text" id="userSearch" placeholder="Поиск по имени, логину или email...">
+    <div class="fg" style="flex:3">
+      <input type="text" id="userSearch" placeholder="Поиск по имени, логину или email..." onkeyup="if(event.key==='Enter')searchUsers()">
     </div>
-    <div><button class="btn btn-p" onclick="searchUsers()"><i class="fas fa-search"></i> Найти</button></div>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <button class="btn btn-p" onclick="searchUsers()"><i class="fas fa-search"></i> Найти</button>
+      <button class="btn btn-g" onclick="showCreateUser()"><i class="fas fa-plus"></i> Создать</button>
+    </div>
   </div>
   <div id="usersTableContainer" style="overflow-x:auto">
-    <table><thead><tr><th>Имя</th><th>Логин</th><th>Email</th><th>Статус</th><th>Действия</th></tr></thead>
-    <tbody id="usersTableBody"><tr><td colspan="5" style="text-align:center;padding:30px"><div class="spinner"></div> Загрузка...</td></tr></tbody></table>
+    <table><thead><tr><th>Имя</th><th>Логин</th><th>Email</th><th>Группы</th><th>Статус</th><th>Действия</th></tr></thead>
+    <tbody id="usersTableBody"><tr><td colspan="6" style="text-align:center;padding:30px"><div class="spinner"></div> Загрузка...</td></tr></tbody></table>
   </div>
 </div>
+
+<div id="userModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:12px;padding:32px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto">
+    <div id="userModalContent"></div>
+  </div>
+</div>
+
 <script>
-let curUsers=[];
-function searchUsers(){var q=document.getElementById('userSearch').value;fetch('/api/users/list?query='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{if(d.success){curUsers=d.data;renderUsers(curUsers);}}).catch(console.error);}
-function renderUsers(u){var t=document.getElementById('usersTableBody');if(!u.length){t.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-secondary)">Пользователи не найдены</td></tr>';return;}
-t.innerHTML=u.map(function(x){return '<tr><td><b>'+escapeHtml(x.cn||x.sAMAccountName)+'</b></td><td><code>'+escapeHtml(x.sAMAccountName)+'</code></td><td>'+(x.mail||'-')+'</td><td><span class="badge" style="background:'+(x.enabled?'var(--success-light);color:var(--success)':'var(--danger-light);color:var(--danger)')+'">'+(x.enabled?'Активен':'Отключен')+'</span></td><td><button class="btn btn-o btn-sm" onclick="viewUser("'+encodeURIComponent(x.dn)+'")"><i class="fas fa-eye"></i></button></td></tr>';}).join('');}
-function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function viewUser(dn){fetch('/api/users/'+dn).then(r=>r.json()).then(function(d){if(d.success){var u=d.data;alert('Пользователь: '+u.cn+'\nLogin: '+u.sAMAccountName+'\nEmail: '+u.mail+'\nГруппы: '+u.memberOf.join(', '));}}).catch(console.error);}
+var curUsers = [];
+
+function searchUsers() {
+  var q = document.getElementById('userSearch').value;
+  fetch('/api/users/list?query=' + encodeURIComponent(q)).then(function(r){return r.json()}).then(function(d){
+    if (d.success) { curUsers = d.data; renderUsers(curUsers); }
+  }).catch(console.error);
+}
+
+function renderUsers(u) {
+  var t = document.getElementById('usersTableBody');
+  if (!u || !u.length) { t.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-secondary)">Пользователи не найдены</td></tr>'; return; }
+  t.innerHTML = u.map(function(x){
+    return '<tr>' +
+      '<td><b>' + esc(x.cn || x.sAMAccountName) + '</b></td>' +
+      '<td><code>' + esc(x.sAMAccountName) + '</code></td>' +
+      '<td>' + (x.mail ? esc(x.mail) : '-') + '</td>' +
+      '<td><span style="font-size:11px;color:var(--text-secondary)">' + (x.memberOf ? x.memberOf.length : 0) + ' групп</span></td>' +
+      '<td><span class="badge" style="background:' + (x.enabled ? 'var(--success-light);color:var(--success)' : 'var(--danger-light);color:var(--danger)') + '">' + (x.enabled ? 'Активен' : 'Отключен') + '</span></td>' +
+      '<td style="white-space:nowrap">' +
+        '<button class="btn btn-o btn-sm" onclick="viewUser(\'' + escAttr(x.dn) + '\')" title="Просмотр"><i class="fas fa-eye"></i></button> ' +
+        '<button class="btn btn-sm ' + (x.enabled ? 'btn-o" style="color:var(--danger);border-color:var(--danger)"' : 'btn-g') + '" onclick="toggleUser(\'' + escAttr(x.dn) + '\',' + (!x.enabled) + ')" title="' + (x.enabled ? 'Отключить' : 'Включить') + '"><i class="fas fa-' + (x.enabled ? 'ban' : 'check') + '"></i></button> ' +
+        '<button class="btn btn-o btn-sm" onclick="showResetPwd(\'' + escAttr(x.dn) + '\',\'' + escAttr(x.sAMAccountName) + '\')" title="Сброс пароля"><i class="fas fa-key"></i></button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
+
+function viewUser(dn) {
+  fetch('/api/users/' + encodeURIComponent(dn)).then(function(r){return r.json()}).then(function(d){
+    if (d.success) {
+      var u = d.data;
+      var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+        '<h3><i class="fas fa-user"></i> ' + esc(u.cn) + '</h3>' +
+        '<button class="btn btn-sm btn-o" onclick="closeModal()"><i class="fas fa-times"></i></button></div>' +
+        '<div class="row"><div class="fg"><label>Логин</label><input value="' + esc(u.sAMAccountName) + '" readonly></div>' +
+        '<div class="fg"><label>Email</label><input value="' + esc(u.mail) + '" readonly></div></div>' +
+        '<div class="row"><div class="fg"><label>Статус</label><input value="' + (u.enabled ? 'Активен' : 'Отключен') + '" readonly></div>' +
+        '<div class="fg"><label>Телефон</label><input value="' + esc(u.telephoneNumber || '-') + '" readonly></div></div>' +
+        '<div class="row"><div class="fg"><label>Должность</label><input value="' + esc(u.title || '-') + '" readonly></div>' +
+        '<div class="fg"><label>Отдел</label><input value="' + esc(u.department || '-') + '" readonly></div></div>' +
+        '<div class="fg" style="margin-top:16px"><label>Группы (' + u.memberOf.length + ')</label></div>' +
+        '<div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">' +
+        (u.memberOf.length ? u.memberOf.map(function(g){return '<div style="padding:4px 8px;font-size:12px;border-bottom:1px solid var(--border-light)">' + esc(g) + '</div>';}).join('') : '<div style="color:var(--text-secondary);font-size:12px">Нет групп</div>') +
+        '</div>';
+      document.getElementById('userModalContent').innerHTML = html;
+      document.getElementById('userModal').style.display = 'flex';
+    }
+  }).catch(console.error);
+}
+
+function closeModal() { document.getElementById('userModal').style.display = 'none'; }
+
+function toggleUser(dn, enable) {
+  var action = enable ? 'enable' : 'disable';
+  if (!confirm((enable ? 'Включить' : 'Отключить') + ' пользователя?')) return;
+  fetch('/api/users/' + action + '/' + encodeURIComponent(dn), { method: 'PATCH' }).then(function(r){return r.json()}).then(function(d){
+    if (d.success) { searchUsers(); } else { alert('Ошибка: ' + d.message); }
+  }).catch(function(e){alert('Ошибка: ' + e.message);});
+}
+
+function showResetPwd(dn, sam) {
+  var newPwd = prompt('Новый пароль для ' + sam + ' (мин. 8 символов):', '');
+  if (!newPwd || newPwd.length < 8) { alert('Пароль должен быть минимум 8 символов'); return; }
+  if (!confirm('Сбросить пароль для ' + sam + '?')) return;
+  fetch('/api/password/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dn:dn, newPassword:newPwd}) })
+    .then(function(r){return r.json()}).then(function(d){
+      if (d.success) { alert('Пароль сброшен для ' + sam); } else { alert('Ошибка: ' + d.message); }
+    }).catch(function(e){alert('Ошибка: ' + e.message);});
+}
+
+function showCreateUser() {
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">' +
+    '<h3><i class="fas fa-user-plus"></i> Создать пользователя</h3>' +
+    '<button class="btn btn-sm btn-o" onclick="closeModal()"><i class="fas fa-times"></i></button></div>' +
+    '<div class="row"><div class="fg"><label>Имя *</label><input id="cu-fn" placeholder="Иван"></div>' +
+    '<div class="fg"><label>Фамилия *</label><input id="cu-ln" placeholder="Иванов"></div></div>' +
+    '<div class="row"><div class="fg"><label>Логин *</label><input id="cu-sam" placeholder="ivanov.ii"></div>' +
+    '<div class="fg"><label>Email</label><input id="cu-mail" placeholder="ivanov.ii@company.ru"></div></div>' +
+    '<div class="fg"><label>OU (папка)</label><input id="cu-ou" value="OU=Users,DC=rusagroeco,DC=ru"></div>' +
+    '<div class="fg"><label>Пароль</label><input type="password" id="cu-pwd" placeholder="Минимум 8 символов"></div>' +
+    '<div style="margin-top:16px;display:flex;gap:8px">' +
+    '<button class="btn btn-p" onclick="createUser()"><i class="fas fa-save"></i> Создать</button>' +
+    '<button class="btn btn-o" onclick="closeModal()">Отмена</button></div>';
+  document.getElementById('userModalContent').innerHTML = html;
+  document.getElementById('userModal').style.display = 'flex';
+}
+
+function createUser() {
+  var data = {
+    cn: document.getElementById('cu-fn').value + ' ' + document.getElementById('cu-ln').value,
+    givenName: document.getElementById('cu-fn').value,
+    sn: document.getElementById('cu-ln').value,
+    sAMAccountName: document.getElementById('cu-sam').value,
+    mail: document.getElementById('cu-mail').value,
+    ou: document.getElementById('cu-ou').value,
+    userPassword: document.getElementById('cu-pwd').value
+  };
+  if (!data.sAMAccountName || !data.cn || !data.userPassword) { alert('Заполните обязательные поля'); return; }
+  fetch('/api/users', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
+    .then(function(r){return r.json()}).then(function(d){
+      if (d.success) { alert('Пользователь создан'); closeModal(); searchUsers(); }
+      else { alert('Ошибка: ' + d.message); }
+    }).catch(function(e){alert('Ошибка: ' + e.message);});
+}
+
 searchUsers();
 </script>
 <%- include('../partials/footer') %>

@@ -23,7 +23,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   fetch('/api/monitoring/stats').then(r=>r.json()).then(d=>{if(d.success){document.getElementById('totalUsers').textContent=d.data.totalUsers;document.getElementById('enabledUsers').textContent=d.data.enabledUsers;document.getElementById('disabledUsers').textContent=d.data.disabledUsers;document.getElementById('totalGroups').textContent=d.data.totalGroups;}}).catch(()=>{});
-  fetch('/api/settings/ldap-status').then(r=>r.json()).then(d=>{document.getElementById('systemStatus').innerHTML=d.success&&d.data.connected?'<span style="color:var(--success)"><i class="fas fa-check-circle"></i> LDAP подключен: '+d.data.domain+'</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: '+(d.data&&d.data.error||'Ошибка')+'</span>';}).catch(()=>{document.getElementById('systemStatus').innerHTML='<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</span>';});
+  fetch('/api/settings/ldap-status').then(r=>r.json()).then(d=>{document.getElementById('systemStatus').innerHTML=d.success&&d.data.connected?'<span style="color:var(--success)"><i class="fas fa-check-circle"></i> LDAP подключен: '+d.data.domainName || d.data.domain+'</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: '+(d.data&&d.data.error||'Ошибка')+'</span>';}).catch(()=>{document.getElementById('systemStatus').innerHTML='<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</span>';});
 });
 </script>
 <%- include('../partials/footer') %>

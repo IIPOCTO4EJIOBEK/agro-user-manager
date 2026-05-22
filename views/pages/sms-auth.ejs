@@ -1,0 +1,50 @@
+<%- include('../partials/header', { activePage: 'sms-auth' }) %>
+<div class="card">
+  <h3><i class="fas fa-sms"></i> SMS-Авторизация WiFi</h3>
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap" id="sms-stats"></div>
+  <div class="fg" style="margin-bottom:16px">
+    <input type="text" id="sms-search" placeholder="Поиск по телефону..." oninput="filterSms(this.value)">
+  </div>
+  <div id="sms-results" style="max-height:500px;overflow:auto">Загрузка...</div>
+</div>
+<script>
+var smsData = [];
+function loadSms() {
+  document.getElementById('sms-results').innerHTML = 'Загрузка...';
+  fetch('/api/sms-auth/history').then(r=>r.json()).then(function(d){
+    if (d.ok) {
+      smsData = d.data || [];
+      fetch('/api/sms-auth/stats').then(r=>r.json()).then(function(s){
+        if (s.ok) document.getElementById('sms-stats').innerHTML = 
+          'Статистика: <span class="badge" style="background:var(--primary-light);color:var(--primary)">Всего: ' + (s.total||0) + '</span> ' +
+          '<span class="badge" style="background:#fef3c7;color:#92400e">SMS отправлено: ' + (s.sent||0) + '</span> ' +
+          '<span class="badge" style="background:#f0fdf4;color:#166534">Авторизовано: ' + (s.authorized||0) + '</span>';
+      }).catch(function(){});
+      renderSms(smsData);
+    } else { document.getElementById('sms-results').innerHTML = 'Ошибка: ' + (d.error||''); }
+  }).catch(function(e){ document.getElementById('sms-results').innerHTML = 'Ошибка: ' + e.message; });
+}
+function filterSms(q) { renderSms(smsData.filter(function(r){ return !q || (r.phone||'').includes(q); })); }
+function renderSms(d) {
+  var el = document.getElementById('sms-results');
+  if (!d || !d.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary)">Нет данных</div>'; return; }
+  var h = '<table><tr><th>ID</th><th>Телефон</th><th>MAC</th><th>IP</th><th>Отпр</th><th>Подтв</th><th>Автор</th><th>Отправлено</th><th>Действия</th></tr>';
+  d.forEach(function(r){
+    h += '<tr><td>' + r.id + '</td><td><b>' + esc(r.phone) + '</b></td><td><code>' + esc(r.mac) + '</code></td><td>' + esc(r.ip) + '</td>' +
+      '<td>' + (r.code_sent ? '\u2705' : '\u274c') + '</td><td>' + (r.code_verified ? '\u2705' : '\u274c') + '</td><td>' + (r.authorized ? '\u2705' : '\u274c') + '</td>' +
+      '<td style="font-size:11px">' + (r.ts_sent ? r.ts_sent.substring(0,19) : '') + '</td>' +
+      '<td><button class="btn btn-o btn-xs" onclick="resetSms("'+esc(r.mac)+'","'+esc(r.phone)+'")" title="Сбросить">\ud83d\udd04 Сброс</button></td></tr>';
+  });
+  h += '</table>'; el.innerHTML = h;
+}
+function resetSms(mac,phone) {
+  if (!mac || mac === '00:00:00:00:00:00') return alert('Нет MAC для сброса');
+  if (!confirm('Сбросить для ' + phone + ' (' + mac + ')?')) return;
+  fetch('/api/sms-auth/reset?mac=' + encodeURIComponent(mac) + '&phone=' + encodeURIComponent(phone)).then(r=>r.json()).then(function(d){
+    if (d.ok) { loadSms(); } else { alert('Ошибка: ' + (d.error||'')); }
+  }).catch(function(e){alert('Ошибка: '+e.message);});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+loadSms();
+</script>
+<%- include('../partials/footer') %>
