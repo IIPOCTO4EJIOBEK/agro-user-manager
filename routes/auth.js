@@ -18,7 +18,7 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password, adServer } = req.body;
-    if (adServer) { process.env.LDAP_ACTIVE_HOST = 'ldap://' + adServer + ':389'; }
+    if (adServer) { req.session.adServer = adServer; process.env.LDAP_ACTIVE_HOST = 'ldap://' + adServer + ':389'; }
     const loginName = username.includes('\\') ? username.split('\\')[1] : username.includes('@') ? username.split('@')[0] : username;
     const adLogin = loginName + '@rusagroeco.ru';
 

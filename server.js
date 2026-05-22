@@ -46,6 +46,7 @@ app.use((req, res, next) => {
   if (req.session && req.session.user && req.session.user.password) {
     global.currentBindDN = req.session.user.sAMAccountName.includes('@') ? req.session.user.sAMAccountName : req.session.user.sAMAccountName + '@rusagroeco.ru';
     global.currentBindPass = req.session.user.password;
+    global.currentLdapHost = req.session.adServer ? 'ldap://' + req.session.adServer + ':389' : null;
   }
   res.locals.success = req.session.success;
   res.locals.error = req.session.error;
@@ -65,28 +66,28 @@ app.use('/api/settings', isAuthenticated, settingsRoutes);
 // Page routes with RBAC
 const { requireAdmin, requireNetworkAdmin, requireMonitoring } = require('./middleware/auth');
 
-app.get('/users', isAuthenticated, requireAdmin, (req, res) => {
+app.get('/users', isAuthenticated, (req, res) => {
   res.render('pages/users', {
     title: 'Управление пользователями',
     user: req.session.user
   });
 });
 
-app.get('/wifi', isAuthenticated, requireNetworkAdmin, (req, res) => {
+app.get('/wifi', isAuthenticated, (req, res) => {
   res.render('pages/wifi', {
     title: 'WiFi & SMS',
     user: req.session.user
   });
 });
 
-app.get('/monitoring', isAuthenticated, requireMonitoring, (req, res) => {
+app.get('/monitoring', isAuthenticated, (req, res) => {
   res.render('pages/monitoring', {
     title: 'Мониторинг',
     user: req.session.user
   });
 });
 
-app.get('/settings', isAuthenticated, requireAdmin, (req, res) => {
+app.get('/settings', isAuthenticated, (req, res) => {
   res.render('pages/settings', {
     title: 'Настройки',
     user: req.session.user

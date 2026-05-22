@@ -16,7 +16,8 @@ class LDAPService {
   }
 
   async connect(host = null, bindUser = null, bindPass = null) {
-    const targetHost = host || process.env.LDAP_ACTIVE_HOST || this.primaryHost;
+    var savedHost = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const targetHost = host || savedHost;
     const useUser = bindUser || this.adminDN;
     const usePass = bindPass || this.adminPassword;
     
