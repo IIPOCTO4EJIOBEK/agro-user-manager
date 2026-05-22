@@ -1,0 +1,19 @@
+<%- include('../partials/header', { activePage: 'import' }) %>
+<div class="row">
+  <div class="card">
+    <h3><i class="fas fa-download"></i> Экспорт</h3>
+    <p style="margin-bottom:16px;color:var(--text-secondary)">Скачать всех пользователей AD в CSV</p>
+    <a href="/api/export/csv" class="btn btn-p"><i class="fas fa-file-csv"></i> Экспортировать CSV</a>
+  </div>
+  <div class="card">
+    <h3><i class="fas fa-upload"></i> Импорт CSV</h3>
+    <p style="margin-bottom:16px;color:var(--text-secondary)">Вставьте JSON с пользователями для массового создания</p>
+    <textarea id="import-json" style="width:100%;min-height:150px;font-family:monospace;font-size:12px" placeholder='[{"cn":"Иванов Иван","sAMAccountName":"ivanov.ii","mail":"ivanov@company.ru","ou":"OU=Users,DC=rusagroeco,DC=ru"}]'></textarea>
+    <button class="btn btn-g" onclick="doImport()" style="margin-top:8px"><i class="fas fa-upload"></i> Импортировать</button>
+    <div id="import-result" style="margin-top:12px"></div>
+  </div>
+</div>
+<script>
+function doImport(){var json=document.getElementById('import-json').value;try{var users=JSON.parse(json);if(!users.length)throw new Error('empty');fetch('/api/import/csv',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({users:users})}).then(function(r){return r.json()}).then(function(d){document.getElementById('import-result').innerHTML=d.success?'<div class="alert alert-success">Создано: '+d.created+', ошибок: '+d.errors+'</div>':'<div class="alert alert-error">'+d.message+'</div>';}).catch(function(e){document.getElementById('import-result').innerHTML='<div class="alert alert-error">'+e.message+'</div>';});}catch(e){document.getElementById('import-result').innerHTML='<div class="alert alert-error">Неверный JSON</div>';}}
+</script>
+<%- include('../partials/footer') %>

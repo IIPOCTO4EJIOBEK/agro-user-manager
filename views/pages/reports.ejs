@@ -1,0 +1,27 @@
+<%- include('../partials/header', { activePage: 'reports' }) %>
+<div class="row">
+  <div class="card">
+    <h3><i class="fas fa-key"></i> Пароли никогда не истекают</h3>
+    <div id="r-passwords"><div class="spinner"></div> Загрузка...</div>
+  </div>
+  <div class="card">
+    <h3><i class="fas fa-copy"></i> Дубликаты пользователей</h3>
+    <div id="r-duplicates"><div class="spinner"></div> Загрузка...</div>
+  </div>
+</div>
+<script>
+fetch('/api/report/passwords').then(function(r){return r.json()}).then(function(d){
+  if(!d.success){document.getElementById('r-passwords').innerHTML='Ошибка';return;}
+  var html='<p style="margin-bottom:8px;color:var(--text-secondary);font-size:12px">Найдено: '+d.count+'</p><div style="max-height:300px;overflow:auto"><table>';
+  (d.data||[]).slice(0,50).forEach(function(u){html+='<tr><td>'+esc(u.cn)+'</td><td><code>'+esc(u.sAMAccountName)+'</code></td></tr>';});
+  html+='</table></div>'; document.getElementById('r-passwords').innerHTML=html;
+}).catch(function(){});
+fetch('/api/report/duplicates').then(function(r){return r.json()}).then(function(d){
+  if(!d.success){document.getElementById('r-duplicates').innerHTML='Ошибка';return;}
+  var html='<p style="margin-bottom:8px;color:var(--text-secondary);font-size:12px">Найдено: '+d.count+'</p><div style="max-height:300px;overflow:auto"><table>';
+  (d.data||[]).slice(0,50).forEach(function(r){html+='<tr><td><b>'+esc(r.name)+'</b></td><td>'+r.count+' совпадений</td></tr>';});
+  html+='</table></div>'; document.getElementById('r-duplicates').innerHTML=html;
+}).catch(function(){});
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script>
+<%- include('../partials/footer') %>

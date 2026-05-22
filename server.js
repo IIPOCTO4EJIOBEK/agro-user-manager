@@ -286,6 +286,160 @@ app.get('/computers', isAuthenticated, function(req,res){ res.render('pages/comp
 // Audit page
 app.get('/audit', isAuthenticated, function(req,res){ res.render('pages/audit', { title: 'Аудит', user: req.session.user, activePage: 'audit' }); });
 
+
+// === EDIT USER ===
+app.put('/api/users/:dn', isAuthenticated, async (req, res) => {
+  try {
+    const dn = decodeURIComponent(req.params.dn);
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const data = req.body;
+    var ldif = 'dn: ' + dn + '\nchangetype: modify\n';
+    if (data.mail) ldif += 'replace: mail\nmail: ' + data.mail + '\n-\n';
+    if (data.displayName) ldif += 'replace: displayName\ndisplayName: ' + data.displayName + '\n-\n';
+    if (data.telephoneNumber) ldif += 'replace: telephoneNumber\ntelephoneNumber: ' + data.telephoneNumber + '\n-\n';
+    if (data.title) ldif += 'replace: title\ntitle: ' + data.title + '\n-\n';
+    if (data.department) ldif += 'replace: department\ndepartment: ' + data.department + '\n-\n';
+    const tmpfile = '/tmp/edit_' + Date.now() + '.ldif';
+    require('fs').writeFileSync(tmpfile, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmpfile + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmpfile);
+    res.json({ success: true, message: 'User updated' });
+  } catch(e) { res.json({ success: false, message: e.message || 'Error' }); }
+});
+
+// === DISABLED USERS ===
+app.get('/api/users-disabled', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -E pr=5000/noprompt -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=user)(!(objectClass=computer))(userAccountControl:1.2.840.113556.1.4.803:=2))" dn cn sAMAccountName mail -LLL 2>/dev/null | head -3000',
+      {timeout: 30000}
+    ).toString();
+    const users = []; var cur = null;
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('dn: ')) { cur = { dn: line.substring(4), cn: '', sAMAccountName: '', mail: '' }; users.push(cur); }
+      else if (line.startsWith('cn: ') && cur) cur.cn = line.substring(4);
+      else if (line.startsWith('sAMAccountName: ') && cur) cur.sAMAccountName = line.substring(16);
+      else if (line.startsWith('mail: ') && cur) cur.mail = line.substring(6);
+    });
+    res.json({ success: true, data: users.slice(0, 500) });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === EXPORT USERS CSV ===
+app.get('/api/export/csv', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -E pr=5000/noprompt -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=user)(!(objectClass=computer)))" dn cn sAMAccountName mail department title telephoneNumber userAccountControl -LLL 2>/dev/null',
+      {timeout: 60000}
+    ).toString();
+    var csv = 'dn,cn,sAMAccountName,mail,department,title,phone,enabled\n';
+    var cur = {}; var fields = {};
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('dn: ')) {
+        if (cur.dn) {
+          csv += '"' + (cur.dn||'') + '","' + (cur.cn||'') + '","' + (cur.sAMAccountName||'') + '","' + (cur.mail||'') + '","' + (cur.department||'') + '","' + (cur.title||'') + '","' + (cur.telephoneNumber||'') + '","' + (cur.enabled ? 'yes' : 'no') + '"\n';
+        }
+        cur = { dn: line.substring(4) };
+      } else if (line.startsWith('cn: ')) cur.cn = line.substring(4);
+      else if (line.startsWith('sAMAccountName: ')) cur.sAMAccountName = line.substring(16);
+      else if (line.startsWith('mail: ')) cur.mail = line.substring(6);
+      else if (line.startsWith('department: ')) cur.department = line.substring(12);
+      else if (line.startsWith('title: ')) cur.title = line.substring(7);
+      else if (line.startsWith('telephoneNumber: ')) cur.telephoneNumber = line.substring(17);
+      else if (line.startsWith('userAccountControl: ')) cur.enabled = (parseInt(line.substring(20)) & 2) === 0;
+    });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=ad_users_export.csv');
+    res.send('\uFEFF' + csv);
+  } catch(e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// === IMPORT USERS FROM CSV (batch create) ===
+app.post('/api/import/csv', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const data = req.body;
+    if (!data.users || !data.users.length) return res.json({ success: false, message: 'No users' });
+    var created = 0, errors = 0;
+    for (var u of data.users) {
+      if (!u.sAMAccountName || !u.cn) { errors++; continue; }
+      try {
+        const pwd = Buffer.from('"' + (u.userPassword || 'Password123') + '"').toString('base64');
+        const ou = u.ou || 'OU=Users,DC=rusagroeco,DC=ru';
+        const dn = 'CN=' + u.cn + ',' + ou;
+        var ldif = 'dn: ' + dn + '\nobjectClass: user\nobjectClass: organizationalPerson\nobjectClass: person\nobjectClass: top\n';
+        ldif += 'cn: ' + u.cn + '\nsn: ' + (u.sn || u.cn.split(' ')[1] || u.cn) + '\nsAMAccountName: ' + u.sAMAccountName + '\n';
+        if (u.mail) ldif += 'mail: ' + u.mail + '\n';
+        if (u.department) ldif += 'department: ' + u.department + '\n';
+        ldif += 'unicodePwd:: ' + pwd + '\nuserAccountControl: 512\n';
+        const tmpfile = '/tmp/imp_' + Date.now() + '_' + created + '.ldif';
+        require('fs').writeFileSync(tmpfile, ldif);
+        require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmpfile + ' 2>&1', {timeout: 10000});
+        require('fs').unlinkSync(tmpfile);
+        created++;
+      } catch(e) { errors++; }
+    }
+    res.json({ success: true, created: created, errors: errors });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === REPORTS ===
+app.get('/api/report/passwords', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    // Users with password never expires
+    const r = require('child_process').execSync(
+      'ldapsearch -x -E pr=5000/noprompt -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=user)(!(objectClass=computer))(userAccountControl:1.2.840.113556.1.4.803:=66048))" cn sAMAccountName -LLL 2>/dev/null | head -2000',
+      {timeout: 30000}
+    ).toString();
+    var users = []; var cur = null;
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('cn: ')) { cur = { cn: line.substring(4), sAMAccountName: '' }; users.push(cur); }
+      else if (line.startsWith('sAMAccountName: ') && cur) cur.sAMAccountName = line.substring(16);
+    });
+    res.json({ success: true, data: users, report: 'password_never_expires', count: users.length });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.get('/api/report/duplicates', isAuthenticated, async (req, res) => {
+  try {
+    const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
+    const pass = global.currentBindPass || '!P09710023p2023';
+    const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
+    const r = require('child_process').execSync(
+      'ldapsearch -x -E pr=5000/noprompt -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -b "DC=rusagroeco,DC=ru" "(&(objectClass=user)(!(objectClass=computer)))" cn sAMAccountName -LLL 2>/dev/null',
+      {timeout: 60000}
+    ).toString();
+    var names = {}; var duplicates = [];
+    r.split('\n').forEach(function(line) {
+      if (line.startsWith('cn: ')) {
+        var cn = line.substring(4).toLowerCase().trim();
+        if (!names[cn]) names[cn] = [];
+        names[cn].push(cn);
+      }
+    });
+    Object.keys(names).forEach(function(k) { if (names[k].length > 1) duplicates.push({ name: k, count: names[k].length }); });
+    res.json({ success: true, data: duplicates.sort(function(a,b){return b.count-a.count;}), count: duplicates.length });
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+// === PAGES ===
+app.get('/users/disabled', isAuthenticated, function(req,res){ res.render('pages/users-disabled', { title: '\u041e\u0442\u043a\u043b\u044e\u0447\u0435\u043d\u043d\u044b\u0435 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0438', user: req.session.user, activePage: 'users' }); });
+app.get('/reports', isAuthenticated, function(req,res){ res.render('pages/reports', { title: '\u041e\u0442\u0447\u0451\u0442\u044b', user: req.session.user, activePage: 'reports' }); });
+app.get('/import', isAuthenticated, function(req,res){ res.render('pages/import', { title: '\u0418\u043c\u043f\u043e\u0440\u0442/\u042d\u043a\u0441\u043f\u043e\u0440\u0442', user: req.session.user, activePage: 'import' }); });
+
 // Page routes with RBAC
 const { requireAdmin, requireNetworkAdmin, requireMonitoring } = require('./middleware/auth');
 
