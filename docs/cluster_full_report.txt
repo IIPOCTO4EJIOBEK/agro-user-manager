@@ -1,0 +1,521 @@
+# ============================================================================
+# АНАЛИЗ И РЕКОМЕНДАЦИИ ПО ПРОИЗВОДИТЕЛЬНОСТИ КЛАСТЕРА BITRIX
+# Полный отчёт по всем серверам
+# Дата: 20 Февраля 2026
+# ============================================================================
+
+## 📊 ОБЩАЯ КАРТА КЛАСТЕРА
+
+```
+                    ┌─────────────────┐
+                    │   10.0.1.50     │
+                    │   Load Balancer │
+                    │   HAProxy       │
+                    │   8 CPU / 32GB  │
+                    └────────┬────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+┌───────┴────────┐  ┌────────┴────────┐  ┌───────┴────────┐
+│  10.0.1.200    │  │   10.0.1.210    │  │  10.0.1.201    │
+│  DB Primary    │  │   Redis         │  │  DB Replica    │
+│  PostgreSQL    │  │   4 CPU / 16GB  │  │  PostgreSQL    │
+│  16 CPU / 128GB│  │                 │  │  16 CPU / 96GB │
+└───────┬────────┘  └─────────────────┘  └────────────────┘
+        │
+        │
+┌───────┴────────┐  ┌─────────────────┐
+│  10.0.1.220    │  │   10.0.1.221    │
+│  Web Server 01 │  │   Web Server 02 │
+│  Nginx+Apache  │  │   Nginx+Apache  │
+│  16 CPU / 32GB │  │   16 CPU / 32GB │
+└────────────────┘  └─────────────────┘
+
+┌─────────────────┐
+│  10.0.1.230     │
+│  Push Server    │
+│  Nginx+Node.js  │
+│  6 CPU / 16GB   │
+└─────────────────┘
+```
+
+---
+
+## 📋 ДЕТАЛЬНЫЕ ХАРАКТЕРИСТИКИ СЕРВЕРОВ
+
+### 10.0.1.50 (b24-lb) - Load Balancer
+
+**Характеристики:**
+- **CPU:** 8 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 32 GB (используется 2.5 GB, свободно 28 GB)
+- **Disk:** 17 GB (используется 23%)
+- **Uptime:** 1 день 7 часов
+- **Load Average:** 0.00, 0.01, 0.00
+
+**Службы:**
+- HAProxy (maxconn: 20000)
+- Режим: HTTP/HTTPS + TCP (для push)
+
+**Проблемы:**
+- ⚠️ Web02 (10.0.1.221) ЗАКОММЕНТИРОВАН в HAProxy!
+- ⚠️ Низкий maxconn для высокой нагрузки
+
+---
+
+### 10.0.1.200 (b24-db-primary) - Основная БД
+
+**Характеристики:**
+- **CPU:** 16 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 128 GB (используется 13 GB, свободно 111 GB)
+- **Disk:** 997 GB (используется 2% - 19 GB)
+- **Uptime:** 1 день 10 часов
+- **Load Average:** 0.02, 0.21, 0.24
+
+**Службы:**
+- PostgreSQL 15+
+- MySQL (innodb_buffer_pool_size = 90G - НЕ используется!)
+
+**Проблемы:**
+- 🔴 PostgreSQL использует мало памяти при 128GB RAM!
+- 🔴 MySQL настроен но не используется (90GB буфер впустую!)
+
+---
+
+### 10.0.1.201 (b24-db-replica) - Реплика БД
+
+**Характеристики:**
+- **CPU:** 16 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 96 GB (используется 6.1 GB, свободно 87 GB)
+- **Disk:** 997 GB (используется 2% - 15 GB)
+- **Uptime:** 1 день 10 часов
+- **Load Average:** 0.20, 0.22, 0.24
+
+**Службы:**
+- PostgreSQL 15+ (реплика)
+
+**Проблемы:**
+- ⚠️ Недоиспользование памяти (6GB из 96GB!)
+
+---
+
+### 10.0.1.210 (b24-redis) - Redis Server
+
+**Характеристики:**
+- **CPU:** 4 ядра @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 16 GB (используется 1.7 GB, свободно 13 GB)
+- **Disk:** 17 GB (используется 26%)
+- **Uptime:** 1 день 7 часов
+- **Load Average:** 0.00, 0.05, 0.00
+
+**Службы:**
+- Redis 6.x
+- MySQL 8.0 (innodb_buffer_pool_size = 6GB)
+- Apache
+
+**Проблемы:**
+- ✅ Redis оптимизирован (maxmemory=4GB применено)
+- ⚠️ MySQL не используется (6GB буфер)
+
+---
+
+### 10.0.1.220 (b24-web-01) - Web Server 01
+
+**Характеристики:**
+- **CPU:** 16 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 32 GB (используется 4.3 GB, свободно 21 GB)
+- **Disk:** 17 GB (используется 64% - 11 GB)
+- **Uptime:** 15 часов
+- **Load Average:** 0.24, 0.79, 0.68
+
+**Службы:**
+- Nginx (worker_processes: 8, worker_connections: 10240)
+- Apache/HTTPD
+
+**Проблемы:**
+- ⚠️ Диск заполнен на 64% (критично!)
+- ⚠️ Nginx worker_processes не оптимален (8 вместо auto)
+
+---
+
+### 10.0.1.221 (b24-web-02) - Web Server 02
+
+**Характеристики:**
+- **CPU:** 16 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 32 GB (используется 2.7 GB, свободно 27 GB)
+- **Disk:** 17 GB (используется 41% - 6.9 GB)
+- **Uptime:** 5 часов
+- **Load Average:** 0.00, 0.00, 0.00
+
+**Службы:**
+- Nginx (8 workers)
+- Apache/HTTPD
+
+**Проблемы:**
+- 🔴 ЗАКОММЕНТИРОВАН В HAProxy (10.0.1.50)!
+- ⚠️ Простаивает 90% ресурсов
+
+---
+
+### 10.0.1.230 (b24-push) - Push Server
+
+**Характеристики:**
+- **CPU:** 6 ядер @ 2.70GHz (Intel Xeon Gold 6226)
+- **RAM:** 16 GB (используется 1.9 GB, свободно 13 GB)
+- **Disk:** 17 GB (используется 25%)
+- **Uptime:** 1 день 7 часов
+- **Load Average:** 0.08, 0.05, 0.01
+
+**Службы:**
+- Nginx
+- Node.js Push Server (порты 8010-8015, 9010-9011)
+
+**Проблемы:**
+- ✅ Нормальная загрузка
+
+---
+
+## 🔴 КРИТИЧЕСКИЕ ПРОБЛЕМЫ
+
+### 1. Web Server 02 НЕ РАБОТАЕТ (10.0.1.221)
+
+**Проблема:** Сервер закомментирован в HAProxy
+```
+#server web02 10.0.1.221:80 check inter 2000 cookie web02
+```
+
+**Решение:**
+```bash
+# На 10.0.1.50 отредактировать /etc/haproxy/haproxy.cfg
+nano /etc/haproxy/haproxy.cfg
+
+# Убрать комментарий:
+server web02 10.0.1.221:80 check inter 2000 cookie web02
+
+# Перезапустить HAProxy:
+systemctl restart haproxy
+```
+
+**Эффект:** +100% к производительности веб-серверов
+
+---
+
+### 2. PostgreSQL НЕДОИСПОЛЬЗУЕТ ПАМЯТЬ
+
+**10.0.1.200 (Primary):** 128GB RAM, используется ~10GB
+**10.0.1.201 (Replica):** 96GB RAM, используется ~6GB
+
+**Рекомендуемые настройки для 10.0.1.200:**
+
+```bash
+# /var/lib/pgsql/data/postgresql.conf
+shared_buffers = 32GB              # 25% от 128GB
+effective_cache_size = 96GB        # 75% от 128GB
+work_mem = 256MB                   # Для сложных запросов
+maintenance_work_mem = 4GB         # Для VACUUM/CREATE INDEX
+wal_buffers = 64MB                 # Для WAL
+max_connections = 200              # Увеличить с текущего
+checkpoint_completion_target = 0.9
+random_page_cost = 1.1             # Для SSD
+effective_io_concurrency = 200     # Для SSD
+
+# WAL оптимизация
+wal_level = replica
+max_wal_senders = 10
+wal_keep_size = 1GB
+
+# Logging
+log_min_duration_statement = 1000
+log_checkpoints = on
+log_connections = on
+log_disconnections = on
+log_lock_waits = on
+```
+
+**Рекомендуемые настройки для 10.0.1.201:**
+
+```bash
+# /var/lib/pgsql/data/postgresql.conf
+shared_buffers = 24GB              # 25% от 96GB
+effective_cache_size = 72GB        # 75% от 96GB
+work_mem = 128MB
+maintenance_work_mem = 2GB
+```
+
+**Применение:**
+```bash
+# На обоих серверах
+systemctl restart postgresql
+
+# Проверка
+sudo -u postgres psql -c "SHOW shared_buffers;"
+sudo -u postgres psql -c "SHOW effective_cache_size;"
+```
+
+---
+
+### 3. MySQL буфер 90GB НА 10.0.1.200 НЕ ИСПОЛЬЗУЕТСЯ
+
+**Проблема:** На сервере PostgreSQL, но настроен MySQL с буфером 90GB
+
+**Решение:**
+```bash
+# Если MySQL не используется - отключить
+systemctl stop mysqld
+systemctl disable mysqld
+
+# Или уменьшить буфер в /etc/my.cnf
+innodb_buffer_pool_size = 1G
+```
+
+---
+
+### 4. Диск 10.0.1.220 заполнен на 64%
+
+**Проблема:** 11GB из 17GB использовано
+
+**Решение:**
+```bash
+# Очистка логов
+find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
+
+# Очистка кэша
+rm -rf /var/cache/nginx/*
+rm -rf /var/tmp/*
+
+# Проверка больших файлов
+du -ah / | sort -rh | head -20
+```
+
+---
+
+### 5. HAProxy настройки
+
+**Текущие:**
+```
+maxconn 20000
+timeout connect 5000
+timeout client 50000
+timeout server 50000
+```
+
+**Рекомендуемые:**
+```bash
+# /etc/haproxy/haproxy.cfg
+
+global
+    maxconn 50000              # Увеличить
+    nbthread 4                 # По числу ядер
+    cpu-map auto:1/1-4         # Привязка к ядрам
+
+defaults
+    timeout connect 10s        # Увеличить
+    timeout client 120s        # Увеличить
+    timeout server 120s        # Увеличить
+    timeout http-request 30s   # Добавить
+    option http-keep-alive     # Добавить
+    http-reuse safe            # Добавить
+
+# Health checks
+default_backend bitrix-web
+    option httpchk GET /
+    http-check expect status 200
+    balance roundrobin
+    cookie SERVERID insert indirect nocache
+    server web01 10.0.1.220:80 check inter 2000 rise 2 fall 5 cookie web01
+    server web02 10.0.1.221:80 check inter 2000 rise 2 fall 5 cookie web02
+```
+
+---
+
+### 6. Nginx на веб-серверах
+
+**Текущие (10.0.1.220/221):**
+```
+worker_processes 8
+worker_connections 10240
+worker_rlimit_nofile 10240
+```
+
+**Рекомендуемые:**
+```nginx
+# /etc/nginx/nginx.conf
+
+user nginx;
+worker_processes auto;              # Вместо 8
+worker_rlimit_nofile 65535;         # Увеличить
+
+events {
+    worker_connections 4096;        # Достаточно
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    # Keepalive
+    keepalive_timeout 65;
+    keepalive_requests 1000;
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    
+    # Buffers
+    client_body_buffer_size 16m;
+    client_max_body_size 100m;
+    proxy_buffer_size 128k;
+    proxy_buffers 16 256k;
+    proxy_busy_buffers_size 512k;
+    
+    # Cache
+    open_file_cache max=100000 inactive=60s;
+    open_file_cache_valid 60s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+    
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript 
+                 application/json application/javascript 
+                 application/xml+rss application/rss+xml 
+                 font/truetype font/opentype 
+                 application/vnd.ms-fontobject 
+                 image/svg+xml;
+}
+```
+
+---
+
+## 📊 ИТОГОВАЯ ТАБЛИЦА ОПТИМИЗАЦИИ
+
+| Сервер | Проблема | Текущее | Рекомендуемое | Эффект |
+|--------|----------|---------|---------------|--------|
+| 10.0.1.50 | HAProxy maxconn | 20000 | 50000 | +150% |
+| 10.0.1.50 | Web02 отключен | 1 сервер | 2 сервера | +100% |
+| 10.0.1.200 | PG shared_buffers | ~2GB | 32GB | +1500% |
+| 10.0.1.200 | PG effective_cache | ~8GB | 96GB | +1100% |
+| 10.0.1.200 | MySQL буфер | 90GB (пусто) | 1GB или off | Экономия |
+| 10.0.1.201 | PG shared_buffers | ~2GB | 24GB | +1100% |
+| 10.0.1.220 | Диск | 64% | <50% | Стабильность |
+| 10.0.1.220 | Nginx workers | 8 | auto | Оптимально |
+| 10.0.1.221 | Не используется | 0% | 50% | +100% мощи |
+
+---
+
+## 📋 ПЛАН ДЕЙСТВИЙ
+
+### Этап 1: Критичные изменения (СЕЙЧАС)
+
+```bash
+# 1. Включить Web02 в HAProxy
+ssh 10.0.1.50
+nano /etc/haproxy/haproxy.cfg
+# Раскомментировать: server web02 10.0.1.221:80...
+systemctl restart haproxy
+
+# 2. Очистить диск на 10.0.1.220
+ssh 10.0.1.220
+find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
+rm -rf /var/cache/nginx/*
+```
+
+### Этап 2: Оптимизация PostgreSQL (сегодня)
+
+```bash
+# 1. Настроить 10.0.1.200 (Primary)
+ssh 10.0.1.200
+cat > /var/lib/pgsql/data/postgresql.conf.optimized << 'EOF'
+shared_buffers = 32GB
+effective_cache_size = 96GB
+work_mem = 256MB
+maintenance_work_mem = 4GB
+wal_buffers = 64MB
+max_connections = 200
+checkpoint_completion_target = 0.9
+random_page_cost = 1.1
+effective_io_concurrency = 200
+EOF
+
+cp /var/lib/pgsql/data/postgresql.conf.optimized /var/lib/pgsql/data/postgresql.conf
+systemctl restart postgresql
+
+# 2. Настроить 10.0.1.201 (Replica)
+ssh 10.0.1.201
+# Аналогично с shared_buffers = 24GB
+```
+
+### Этап 3: Оптимизация Nginx (сегодня)
+
+```bash
+# На 10.0.1.220 и 10.0.1.221
+ssh 10.0.1.220
+cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+# Применить настройки из раздела 6
+nginx -t && systemctl restart nginx
+```
+
+### Этап 4: Отключение MySQL (если не используется)
+
+```bash
+# На 10.0.1.200
+ssh 10.0.1.200
+systemctl stop mysqld
+systemctl disable mysqld
+
+# На 10.0.1.210 (если MySQL не используется)
+ssh 10.0.1.210
+systemctl stop mysqld
+systemctl disable mysqld
+```
+
+---
+
+## 🔍 МОНИТОРИНГ
+
+### Скрипт проверки кластера:
+
+```bash
+#!/bin/bash
+# check_cluster.sh
+
+echo "=== LOAD BALANCER ==="
+ssh 10.0.1.50 "echo 'HAProxy connections:'; echo 'show stat' | socat /var/lib/haproxy/stats stdio 2>/dev/null | grep -E 'web01|web02'"
+
+echo "=== DATABASE PRIMARY ==="
+ssh 10.0.1.200 "sudo -u postgres psql -c 'SELECT sum(numbackends) as connections FROM pg_stat_database;'"
+
+echo "=== DATABASE REPLICA ==="
+ssh 10.0.1.201 "sudo -u postgres psql -c 'SELECT pg_is_in_recovery();'"
+
+echo "=== WEB SERVERS ==="
+for i in 220 221; do
+  ssh 10.0.1.$i "echo '10.0.1.$i:'; curl -s -o /dev/null -w '%{http_code}' http://localhost/"
+done
+
+echo "=== REDIS ==="
+ssh 10.0.1.210 "redis-cli INFO stats | grep ops_per_sec"
+```
+
+---
+
+## ⚠️ ВАЖНО
+
+1. **Бэкап перед изменениями:**
+   ```bash
+   cp /var/lib/pgsql/data/postgresql.conf /var/lib/pgsql/data/postgresql.conf.bak
+   cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+   cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+   ```
+
+2. **Тестирование:** Применять изменения по одному и проверять
+
+3. **Мониторинг:** Наблюдать за нагрузкой после изменений
+
+---
+
+## 📁 ФАЙЛЫ
+
+- `/root/cluster_full_report.txt` - Этот файл
+- `/root/cluster_optimization_recommendations.txt` - Предыдущие рекомендации
+- `/root/cluster_applied_settings.txt` - Применённые настройки

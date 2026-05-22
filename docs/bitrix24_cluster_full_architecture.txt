@@ -1,0 +1,649 @@
+# ============================================================================
+# ПОЛНАЯ АРХИТЕКТУРА КЛАСТЕРА BITRIX24
+# Дата: 20 Февраля 2026
+# ============================================================================
+
+## 🗺️ КАРТА КЛАСТЕРА
+
+```
+                                    INTERNET
+                                       │
+                              185.160.36.97 (Public IP)
+                                       │
+                                       ▼
+                        ┌──────────────────────────┐
+                        │  10.0.1.110 (NPM)        │
+                        │  Nginx Proxy Manager     │
+                        │  Ports: 80, 443          │
+                        │  SSL Termination         │
+                        └────────────┬─────────────┘
+                                     │
+                   ┌─────────────────┼─────────────────┐
+                   │                 │                 │
+                   ▼                 ▼                 ▼
+        ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+        │  10.0.1.50     │  │  10.0.1.130    │  │  10.2.25.55    │
+        │  HAProxy LB    │  │  Jitsi Meet    │  │  AI Server     │
+        │  Ports: 80,443 │  │  Ports: 80,443 │  │  Port: 8090    │
+        │  8893-8895     │  │                │  │                │
+        └───────┬────────┘  └────────────────┘  └────────────────┘
+                │
+        ┌───────┴────────┐
+        │                │
+        ▼                ▼
+┌──────────────┐  ┌──────────────┐
+│ 10.0.1.220   │  │ 10.0.1.221   │
+│ Web Server 1 │  │ Web Server 2 │
+│ Nginx+Apache │  │ Nginx+Apache │
+└──────────────┘  └──────────────┘
+```
+
+---
+
+## 📊 СЕРВЕРЫ КЛАСТЕРА
+
+### 10.0.1.110 — Nginx Proxy Manager (ВХОДНАЯ ТОЧКА)
+
+**Роль:** Обратный прокси + SSL терминация
+
+**Конфигурация:**
+```yaml
+Domains:
+  - b24.ahprostory.ru → 10.0.1.50:80
+  - vks.ahprostory.ru → 10.0.1.130:80 (Jitsi)
+  - ai.ahprostory.ru → 10.2.25.55:8090
+  - pdc-pve1.ahprostory.ru → 10.0.1.1:8006
+  - npm.ahprostory.ru → localhost:81
+```
+
+**Stream (проброс портов):**
+```
+8893 → 10.0.1.50:8893 (Push Subscriber HTTP)
+8894 → 10.0.1.50:8894 (Push Subscriber HTTPS)
+8895 → 10.0.1.50:8895 (Push Publisher)
+```
+
+---
+
+### 10.0.1.50 — HAProxy Load Balancer
+
+**Роль:** Балансировка нагрузки + Push Server роутинг
+
+**Службы:**
+- HAProxy (порты 80, 443, 8893-8895)
+- PostgreSQL (локальный)
+- MySQL (локальный)
+
+**HAProxy Конфигурация:**
+
+```haproxy
+# HTTP Frontend (порт 80)
+frontend http-in
+    bind *:80
+    acl path_push_sub path_beg /bitrix/sub/
+    acl path_push_pub path_beg /bitrix/pub/
+    acl is_websocket hdr(Upgrade) -i websocket
+    
+    use_backend bitrix-push-sub if path_push_sub
+    use_backend bitrix-push-pub if path_push_pub
+    default_backend bitrix-web
+
+# HTTPS Frontend (порт 443, TCP mode)
+frontend https-in
+    bind *:443
+    mode tcp
+    default_backend bitrix-web-ssl
+
+# Backend: Веб-серверы
+backend bitrix-web
+    balance roundrobin
+    server web01 10.0.1.220:80 check
+    server web02 10.0.1.221:80 check
+
+backend bitrix-web-ssl
+    mode tcp
+    server web01 10.0.1.220:443 check
+    server web02 10.0.1.221:443 check
+
+# Backend: Push Subscriber
+backend bitrix-push-sub
+    server push01 10.0.1.230:8893 check
+
+# Backend: Push Publisher
+backend bitrix-push-pub
+    server push01 10.0.1.230:8895 check
+```
+
+---
+
+### 10.0.1.210 — REDIS SERVER (ЦЕНТР КЭШИРОВАНИЯ)
+
+**Роль:** Кэш, сессии, очереди, messenger
+
+**Конфигурация Redis:**
+```redis
+bind 0.0.0.0
+port 6379
+daemonize yes
+databases 16
+maxmemory 0  # Без ограничений
+maxmemory-policy volatile-lru
+appendonly no
+appendfsync everysec
+```
+
+**Использование баз данных:**
+```
+DB 0 → cache (кэш Bitrix)
+DB 1 → session (PHP сессии)
+DB 2 → messenger (очереди сообщений)
+DB 3 → pull (Push уведомления)
+DB 4 → push (Push сервер)
+```
+
+**Статистика:**
+- Ops/sec: 12
+- Hit Ratio: 66.4%
+- Connected Clients: 19 (все от Push Server 230)
+
+---
+
+### 10.0.1.200 — DATABASE PRIMARY
+
+**Роль:** Основная база данных
+
+**Службы:**
+- PostgreSQL (репликация → 201)
+- MySQL (основная БД Bitrix)
+- Nginx (локальный)
+- HTTPD (FAILED ⚠️)
+
+**Bitrix Конфигурация (.settings.php):**
+```php
+'connections' => array (
+  'default' => array (
+    'host' => '10.0.1.200',      // Primary
+    'database' => 'prostory',
+    'login' => 'bitrix',
+    'password' => 'S0m3_Str0ng_Pass!',
+  ),
+  'slave' => array (
+    'host' => '10.0.1.201',      // Replica
+    'database' => 'prostory',
+    'login' => 'bitrix',
+  ),
+)
+```
+
+---
+
+### 10.0.1.201 — DATABASE REPLICA
+
+**Роль:** Реплика базы данных
+
+**Службы:**
+- PostgreSQL (реплика ← 200)
+- MySQL (реплика ← 200)
+- Nginx
+- HTTPD
+
+---
+
+### 10.0.1.220 / 10.0.1.221 — WEB SERVERS
+
+**Роль:** Веб-серверы Bitrix24
+
+**Службы:**
+- Nginx (порт 80, 443)
+- Apache/HTTPD (PHP-FPM)
+- PostgreSQL (локальный)
+- Redis client
+
+**Nginx Конфигурация:**
+```nginx
+# /etc/nginx/bx/conf/bitrix.conf
+upstream bitrix {
+    server 127.0.0.1:8888;  # Apache backend
+}
+
+server {
+    listen 80;
+    server_name _;
+    root /home/bitrix/www;
+    
+    location / {
+        proxy_pass http://bitrix;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+---
+
+### 10.0.1.230 — PUSH SERVER
+
+**Роль:** Push уведомления и WebSocket
+
+**Node.js Процессы (8 шт):**
+```
+Subscriber (6 процессов):
+  - push-server-sub-8010.json (порт 8010)
+  - push-server-sub-8011.json (порт 8011)
+  - push-server-sub-8012.json (порт 8012)
+  - push-server-sub-8013.json (порт 8013)
+  - push-server-sub-8014.json (порт 8014)
+  - push-server-sub-8015.json (порт 8015)
+
+Publisher (2 процесса):
+  - push-server-pub-9010.json (порт 9010)
+  - push-server-pub-9011.json (порт 9011)
+```
+
+**Nginx Конфигурация:**
+```nginx
+# /etc/nginx/bx/conf/push-im_subscrider.conf
+location ^~ /bitrix/sub {
+    proxy_pass http://10.0.1.230:1337;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+
+location ^~ /bitrix/pub {
+    proxy_pass http://10.0.1.230:8895;
+}
+```
+
+---
+
+## 🔧 BITRIX24 КОНФИГУРАЦИЯ
+
+### /home/bitrix/www/bitrix/.settings.php
+
+**Redis:**
+```php
+'redis' => array (
+  'value' => array (
+    'enabled' => true,
+    'host' => '10.0.1.210',
+    'port' => 6379,
+    'timeout' => 1,
+    'persistent' => true,
+    
+    'cache' => array ( 'db' => 0 ),
+    'session' => array ( 'db' => 1 ),
+    'messenger' => array ( 'db' => 2 ),
+    'pull' => array ( 'db' => 3 ),
+    'push' => array ( 'db' => 4 ),
+  ),
+)
+```
+
+**Cluster:**
+```php
+'cluster' => array (
+  'value' => array (
+    'enabled' => true,
+    'group_id' => 1,
+    
+    'cache' => array (
+      'type' => 'redis',
+      'host' => '10.0.1.210',
+      'port' => 6379,
+    ),
+    
+    'session' => array (
+      'type' => 'redis',
+      'host' => '10.0.1.210',
+      'port' => 6379,
+    ),
+  ),
+)
+```
+
+**Push Server:**
+```php
+'pull' => array (
+  'value' => array (
+    'default' => 'websocket',
+    'publishing_mode' => 'immediate',
+    
+    # Через HAProxy (10.0.1.50)
+    'path_to_listener' => 'http://10.0.1.50/bitrix/sub/',
+    'path_to_listener_secure' => 'https://10.0.1.50/bitrix/sub/',
+    'path_to_command_handler' => 'http://10.0.1.50/bitrix/sub/handler.php',
+    
+    # WebSocket через HAProxy
+    'websocket' => array (
+      'enabled' => true,
+      'host' => '10.0.1.50',
+      'port' => 80,
+      'secure' => false,
+    ),
+    
+    'signature_key' => 'azTw0fWfYZeOU4JrzXu3UTXtcrWZePoRuAnYCNn9oKRwQIfLqmOYvqRVfJ9s1lZyj5B1L9AWDlFKgpQgX7xEa1MzEUkrkg8suA4qcQVl7UnvJwHoibkhSyvHho6kOGuE',
+    
+    'queue' => array (
+      'type' => 'redis',
+      'host' => '10.0.1.210',
+      'port' => 6379,
+    ),
+  ),
+)
+```
+
+**Messenger:**
+```php
+'messenger' => array (
+  'value' => array (
+    'run_mode' => 'queue',
+    
+    'brokers' => array (
+      'default' => array (
+        'type' => 'redis',
+        'params' => array (
+          'host' => '10.0.1.210',
+          'port' => 6379,
+        ),
+      ),
+    ),
+  ),
+)
+```
+
+**Session:**
+```php
+'session' => array (
+  'value' => array (
+    'mode' => 'default',
+    'handlers' => array (
+      'general' => array ( 
+        'type' => 'redis',
+        'host' => '10.0.1.210',
+        'port' => 6379,
+      ),
+    ),
+  ),
+)
+```
+
+**Queue:**
+```php
+'queue' => array (
+  'value' => array (
+    'enabled' => true,
+    'type' => 'redis',
+    'host' => '10.0.1.210',
+    'port' => 6379,
+    
+    'consumers' => array (
+      'messenger' => array ( 'enabled' => true ),
+      'pull' => array ( 'enabled' => true ),
+      'push' => array ( 'enabled' => true ),
+    ),
+  ),
+)
+```
+
+---
+
+## 🔄 ПОТОК ДАННЫХ
+
+### 1. HTTP Запрос из интернета:
+
+```
+Клиент → 185.160.36.97:443
+    ↓
+NPM (10.0.1.110:443) — SSL терминация
+    ↓
+HAProxy (10.0.1.50:80) — балансировка
+    ↓
+Web Server (10.0.1.220 или 221:80)
+    ↓
+Nginx → Apache:8888 → PHP-FPM
+    ↓
+Bitrix24 Application
+```
+
+### 2. WebSocket Push подключение:
+
+```
+Клиент (браузер)
+    ↓
+NPM (10.0.1.110:8893) — TCP passthrough
+    ↓
+HAProxy (10.0.1.50:8893) — роутинг по /bitrix/sub/
+    ↓
+Push Server (10.0.1.230:8893)
+    ↓
+Nginx → Node.js (порты 8010-8015)
+    ↓
+Redis DB 3 (10.0.1.210:6379) — pub/sub
+```
+
+### 3. Кэширование:
+
+```
+Bitrix24 Application
+    ↓
+Redis DB 0 (10.0.1.210:6379) — кэш
+    ↓
+При miss → MySQL (10.0.1.200)
+```
+
+### 4. Сессии:
+
+```
+PHP Session Start
+    ↓
+Redis DB 1 (10.0.1.210:6379) — сессии
+    ↓
+TTL: 1440 секунд (24 часа)
+```
+
+---
+
+## 🔐 БЕЗОПАСНОСТЬ
+
+### Сетевая безопасность:
+
+```
+INTERNET → NPM (SSL) → HAProxy → Web Servers
+           ↑
+      Firewall
+      Ports: 80, 443
+```
+
+### Внутренняя сеть:
+
+```
+10.0.1.0/24 — доверенная сеть
+Все серверы видят друг друга
+```
+
+### Проблемы безопасности:
+
+1. **Пароли в конфиге:**
+   ```php
+   'password' => 'S0m3_Str0ng_Pass!'  // Видно в .settings.php
+   ```
+
+2. **Redis без пароля:**
+   ```redis
+   # requirepass не установлен
+   bind 0.0.0.0  # Доступен всем
+   ```
+
+3. **Открытые порты:**
+   - 6379 (Redis) — без аутентификации
+   - 3306 (MySQL) — внутренняя сеть
+   - 5432 (PostgreSQL) — внутренняя сеть
+
+---
+
+## ⚠️ ПРОБЛЕМЫ КЛАСТЕРА
+
+### Критичные:
+
+1. **HTTPD FAILED на 10.0.1.200**
+   - Apache не работает с 18 февраля
+   - Требуется срочное исправление
+
+2. **Redis без ограничений памяти**
+   ```redis
+   maxmemory 0  # Может занять всю RAM
+   ```
+
+3. **Redis без аутентификации**
+   ```redis
+   # requirepass не установлен
+   ```
+
+### Средние:
+
+1. **Redis выключен на 10.0.1.221**
+   - Web Server 2 не использует кэш
+
+2. **Репликация PostgreSQL не проверена**
+   - Нет данных о статусе репликации
+
+3. **Hit Ratio Redis 66.4%**
+   - Рекомендуется >80%
+
+---
+
+## 📋 РЕКОМЕНДАЦИИ
+
+### 1. Исправить HTTPD на 10.0.1.200:
+```bash
+ssh vardo001@10.0.1.200
+sudo journalctl -u httpd -n 50
+sudo systemctl start httpd
+```
+
+### 2. Включить аутентификацию Redis:
+```bash
+ssh vardo001@10.0.1.210
+redis-cli CONFIG SET requirepass "StrongRedisPass123!"
+# Обновить .settings.php на всех веб-серверах
+```
+
+### 3. Ограничить память Redis:
+```bash
+redis-cli CONFIG SET maxmemory 8gb
+redis-cli CONFIG SET maxmemory-policy allkeys-lru
+```
+
+### 4. Включить Redis на 10.0.1.221:
+```bash
+ssh vardo001@10.0.1.221
+sudo systemctl enable redis
+sudo systemctl start redis
+```
+
+### 5. Проверить репликацию:
+```bash
+# На 10.0.1.200
+sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+
+# На 10.0.1.201
+sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+```
+
+---
+
+## 📁 ФАЙЛЫ КОНФИГУРАЦИИ
+
+### Основные конфиги:
+
+| Сервер | Файл | Назначение |
+|--------|------|------------|
+| 10.0.1.110 | NPM DB | Проксирование доменов |
+| 10.0.1.50 | /etc/haproxy/haproxy.cfg | Балансировка + Push роутинг |
+| 10.0.1.210 | /etc/redis.conf | Redis сервер |
+| 10.0.1.220 | /home/bitrix/www/bitrix/.settings.php | Bitrix конфигурация |
+| 10.0.1.230 | /etc/push-server/*.json | Push Server процессы |
+
+### Nginx конфиги Bitrix:
+
+| Файл | Назначение |
+|------|------------|
+| bitrix.conf | Основной конфиг |
+| bitrix_general.conf | Общие настройки |
+| bitrix_block.conf | Блокировки |
+| push-im_subscrider.conf | Push WebSocket |
+| ssl.conf | SSL настройки |
+
+---
+
+## 📊 МОНИТОРИНГ
+
+### Что мониторить:
+
+1. **HAProxy (10.0.1.50):**
+   - Статус backend'ов
+   - Время отклика
+   - Ошибки 5xx
+
+2. **Redis (10.0.1.210):**
+   - Hit ratio (>80%)
+   - Использованная память
+   - Connected clients
+
+3. **Базы данных (200, 201):**
+   - Репликация lag
+   - Active connections
+   - Slow queries
+
+4. **Push Server (10.0.1.230):**
+   - Node.js процессы (8 шт)
+   - WebSocket подключения
+   - Redis pub/sub
+
+5. **Web Servers (220, 221):**
+   - HTTPD статус
+   - PHP-FPM pool
+   - Nginx errors
+
+---
+
+## 🎯 ИТОГОВАЯ СХЕМА
+
+```
+INTERNET (185.160.36.97)
+    │
+    ▼
+┌─────────────────────────────────────────┐
+│  10.0.1.110 — Nginx Proxy Manager       │
+│  SSL Termination, Domain Routing        │
+└─────────────────┬───────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+    ▼             ▼             ▼
+┌────────┐  ┌────────┐  ┌────────┐
+│ 10.0.1 │  │ 10.0.1 │  │ 10.2.25│
+│ .50    │  │ .130   │  │ .55    │
+│ HAProxy│  │ Jitsi  │  │ AI     │
+└───┬────┘  └────────┘  └────────┘
+    │
+    ├──────────────────────────────────┐
+    │                                  │
+    ▼                                  ▼
+┌────────┐                      ┌────────────┐
+│ 10.0.1 │                      │ 10.0.1.230 │
+│ .210   │◄────── Redis ───────►│ Push Server│
+│ Redis  │                      │ Node.js    │
+└────────┘                      └────────────┘
+    ▲
+    │
+    ├──────────────────────────────────┐
+    │                                  │
+    ▼                                  ▼
+┌────────┐                      ┌────────────┐
+│ 10.0.1 │                      │ 10.0.1.201 │
+│ .200   │───── Replication ───►│ DB Replica │
+│ DB Prim│                      │ PostgreSQL │
+└────────┘                      └────────────┘
+```

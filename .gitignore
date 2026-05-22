@@ -1,7 +1,14 @@
 node_modules/
+*.log
 *.db
 *.db-shm
 *.db-wal
-*.log
-npm-debug.log*
+v1/data/sessions/
+v2/data/sessions/
+data/
+logs/
+backend/node_modules/
+.vscode/
+__pycache__/
+*.pyc
 .DS_Store

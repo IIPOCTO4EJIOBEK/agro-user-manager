@@ -1,0 +1,309 @@
+# ============================================================================
+# ПРИМЕНЁННЫЕ НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ
+# Кластер Bitrix - 20 Февраля 2026
+# ============================================================================
+
+## ✅ ПРИМЕНЁННЫЕ ИЗМЕНЕНИЯ
+
+### 1. Redis (10.0.1.210) - ПРИМЕНЕНО ✅
+
+```bash
+maxmemory = 4gb
+maxmemory-policy = allkeys-lru
+maxmemory-samples = 10
+```
+
+**Статус:** Применено через redis-cli CONFIG REWRITE
+
+---
+
+### 2. Системные лимиты (10.0.1.210) - ПРИМЕНЕНО ✅
+
+**/etc/security/limits.conf:**
+```
+* soft nofile 65535
+* hard nofile 65535
+root soft nofile 65535
+root hard nofile 65535
+* soft nproc 65535
+* hard nproc 65535
+root soft nproc 65535
+root hard nproc 65535
+```
+
+**/etc/sysctl.conf:**
+```
+fs.file-max = 2097152
+fs.inotify.max_user_watches = 524288
+net.core.somaxconn = 65535
+net.ipv4.tcp_max_syn_backlog = 65535
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_keepalive_intvl = 15
+```
+
+**Статус:** Применено через sysctl -p
+
+---
+
+### 3. MySQL (10.0.1.210) - ГОТОВО К ПРИМЕНЕНИЮ
+
+**Файл:** `/etc/mysql/conf.d/z_bx_custom.cnf`
+
+```ini
+[mysqld]
+innodb_buffer_pool_size = 8G
+innodb_buffer_pool_instances = 8
+innodb_buffer_pool_chunk_size = 1G
+innodb_log_buffer_size = 64M
+innodb_log_file_size = 512M
+innodb_log_files_in_group = 2
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT_NO_FSYNC
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
+innodb_read_io_threads = 8
+innodb_write_io_threads = 8
+table_open_cache = 16384
+table_open_cache_instances = 16
+table_definition_cache = 8192
+thread_cache_size = 128
+thread_handling = pool-of-threads
+tmp_table_size = 256M
+max_heap_table_size = 256M
+max_connections = 200
+max_connect_errors = 100000
+wait_timeout = 28800
+interactive_timeout = 28800
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+```
+
+**Требуется перезапуск:** `sudo systemctl restart mysqld`
+
+---
+
+### 4. Nginx (10.0.1.230) - ГОТОВО К ПРИМЕНЕНИЮ
+
+**Файл:** `/tmp/nginx_optimization.conf`
+
+```nginx
+worker_processes auto;
+worker_rlimit_nofile 65535;
+
+events {
+    worker_connections 4096;
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    open_file_cache max=100000 inactive=60s;
+    open_file_cache_valid 60s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+    
+    client_body_buffer_size 16m;
+    client_max_body_size 100m;
+    
+    proxy_buffer_size 128k;
+    proxy_buffers 16 256k;
+    proxy_busy_buffers_size 512k;
+    proxy_temp_file_write_size 512k;
+    
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+}
+```
+
+**Требуется:** Скопировать в `/etc/nginx/nginx.conf` и перезапустить nginx
+
+---
+
+### 5. PHP (10.0.1.210) - ГОТОВО К ПРИМЕНЕНИЮ
+
+**Файл:** `/tmp/php_optimization.ini`
+
+```ini
+memory_limit = 512M
+max_execution_time = 300
+max_input_time = 300
+upload_max_filesize = 100M
+post_max_size = 100M
+max_input_vars = 10000
+realpath_cache_size = 4096K
+realpath_cache_ttl = 7200
+opcache.enable = 1
+opcache.memory_consumption = 512
+opcache.interned_strings_buffer = 64
+opcache.max_accelerated_files = 100000
+opcache.revalidate_freq = 60
+```
+
+**Требуется:** Скопировать в `/etc/php.ini` и перезапустить PHP-FPM/Apache
+
+---
+
+## 📋 ПЛАН ПРИМЕНЕНИЯ ОСТАВШИХСЯ НАСТРОЕК
+
+### Этап 1: MySQL (требуется перезапуск)
+
+```bash
+# 1. Проверить текущие настройки
+ssh 10.0.1.210
+mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size';"
+
+# 2. Проверить конфиг
+cat /etc/mysql/conf.d/z_bx_custom.cnf
+
+# 3. Перезапустить MySQL
+sudo systemctl restart mysqld
+
+# 4. Проверить применение
+mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool%';"
+```
+
+---
+
+### Этап 2: Nginx
+
+```bash
+# 1. Создать бэкап
+ssh 10.0.1.230
+sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+
+# 2. Применить настройки
+sudo cp /tmp/nginx_optimization.conf /etc/nginx/nginx.conf
+
+# 3. Проверить конфигурацию
+sudo nginx -t
+
+# 4. Перезапустить
+sudo systemctl restart nginx
+```
+
+---
+
+### Этап 3: PHP
+
+```bash
+# 1. Создать бэкап
+ssh 10.0.1.210
+sudo cp /etc/php.ini /etc/php.ini.bak
+
+# 2. Применить настройки
+sudo cp /tmp/php_optimization.ini /etc/php.ini
+
+# 3. Перезапустить Apache/PHP-FPM
+sudo systemctl restart httpd
+# или
+sudo systemctl restart php-fpm
+```
+
+---
+
+## 🔍 ПРОВЕРКА ПРИМЕНЕНИЯ
+
+### Redis
+```bash
+redis-cli CONFIG GET maxmemory
+redis-cli CONFIG GET maxmemory-policy
+```
+
+### MySQL
+```bash
+mysql -e "SHOW VARIABLES LIKE 'innodb_buffer_pool_size';"
+mysql -e "SHOW VARIABLES LIKE 'max_connections';"
+```
+
+### Системные лимиты
+```bash
+ulimit -n
+cat /proc/sys/fs/file-max
+cat /proc/sys/net/core/somaxconn
+```
+
+### Nginx
+```bash
+nginx -T | grep worker_processes
+nginx -T | grep worker_connections
+```
+
+### PHP
+```bash
+php -i | grep memory_limit
+php -i | grep max_execution_time
+```
+
+---
+
+## 📊 ОЖИДАЕМЫЙ ЭФФЕКТ
+
+| Компонент | Параметр | До | После | Эффект |
+|-----------|----------|-----|-------|--------|
+| Redis | maxmemory | 0 | 4GB | Контроль памяти |
+| Redis | eviction | noeviction | allkeys-lru | Автоочистка |
+| MySQL | buffer_pool | 6GB | 8GB | +33% кэш |
+| MySQL | max_connections | 85 | 200 | +135% клиентов |
+| Система | open files | 1024 | 65535 | +64x дескрипторы |
+| Система | somaxconn | 128 | 65535 | +511x очередь |
+| Nginx | workers | 8 | auto | Оптимально |
+| Nginx | connections | 10240 | 4096 | На ядро |
+| PHP | memory | 128M | 512M | +300% память |
+| PHP | execution | 30s | 300s | +10x время |
+
+---
+
+## ⚠️ ВАЖНО
+
+1. **Бэкап перед изменениями:**
+   ```bash
+   sudo cp /etc/mysql/conf.d/bvat.cnf /etc/mysql/conf.d/bvat.cnf.bak
+   sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+   sudo cp /etc/php.ini /etc/php.ini.bak
+   ```
+
+2. **Мониторинг после применения:**
+   ```bash
+   # Проверка памяти
+   free -h
+   
+   # Проверка MySQL
+   mysqltuner
+   
+   # Проверка Redis
+   redis-cli info memory
+   
+   # Проверка нагрузки
+   htop
+   ```
+
+3. **Откат изменений:**
+   ```bash
+   # MySQL
+   sudo rm /etc/mysql/conf.d/z_bx_custom.cnf
+   sudo systemctl restart mysqld
+   
+   # Redis
+   redis-cli CONFIG SET maxmemory 0
+   redis-cli CONFIG SET maxmemory-policy noeviction
+   
+   # Система
+   sudo sysctl -w fs.file-max=9223372036854775807
+   ```
+
+---
+
+## 📁 ФАЙЛЫ
+
+- `/root/cluster_optimization_recommendations.txt` - Полные рекомендации
+- `/etc/mysql/conf.d/z_bx_custom.cnf` - MySQL оптимизация
+- `/tmp/redis_optimization.conf` - Redis оптимизация
+- `/tmp/nginx_optimization.conf` - Nginx оптимизация
+- `/tmp/php_optimization.ini` - PHP оптимизация
+- `/root/cluster_applied_settings.txt` - Этот файл

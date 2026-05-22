@@ -1,0 +1,42 @@
+{
+	"servers": [
+		{
+			"name": "pub-9011",
+			"port": 9011,
+			"hostname": "10.0.1.230",
+			"backlog": 1024,
+			"routes": {
+				"pub": "/bitrix/pub/",
+				"stat": "/server-stat/",
+				"rest": "/bitrix/rest/"
+			}
+		}
+	],
+	"publishMode": true,
+	"processUniqueId": "pub-9011",
+	"clusterMode": true,
+	"storage": {
+		"type": "redis",
+		"host": "10.0.1.210", "port": 6379, "password": "B1tr1x_R3d1s_S3cur3_P@ssw0rd_2026!",
+		"messageTLL": 86400,
+		"channelTLL": 86400,
+		"onlineTLL": 120,
+		"onlineDelta": 10
+	},
+	"security": {
+		"key": "azTw0fWfYZeOU4JrzXu3UTXtcrWZePoRuAnYCNn9oKRwQIfLqmOYvqRVfJ9s1lZyj5B1L9AWDlFKgpQgX7xEa1MzEUkrkg8suA4qcQVl7UnvJwHoibkhSyvHho6kOGuE"
+	},
+	"limits": {
+		"maxPayload": 1048576,
+		"maxConnPerChannel": 100,
+		"maxMessagesPerRequest": 100,
+		"maxChannelsPerRequest": 100,
+		"maxRequestsPerSecond": 50
+	},
+	"debug": {
+		"folderName": "/var/log/push-server",
+		"ip": ["127.0.0.256"],
+		"trustProxy": true,
+		"combineLogs": true
+	}
+}

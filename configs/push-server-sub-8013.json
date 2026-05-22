@@ -1,0 +1,32 @@
+{
+	"servers": [
+		{
+			"name": "sub-8013",
+			"port": 8013,
+			"hostname": "b24.ahprostory.ru",
+			"backlog": 1024,
+			"routes": {
+				"sub": "/bitrix/sub/"
+			}
+		}
+	],
+	"clusterMode": true,
+	"processUniqueId": "sub-8013",
+	"storage": {
+		"type": "redis",
+		"host": "10.0.1.210", "port": 6379, "password": "B1tr1x_R3d1s_S3cur3_P@ssw0rd_2026!",
+		"messageTLL": 86400,
+		"channelTLL": 86400,
+		"onlineTLL": 120,
+		"onlineDelta": 10
+	},
+	"security": {
+		"key": "azTw0fWfYZeOU4JrzXu3UTXtcrWZePoRuAnYCNn9oKRwQIfLqmOYvqRVfJ9s1lZyj5B1L9AWDlFKgpQgX7xEa1MzEUkrkg8suA4qcQVl7UnvJwHoibkhSyvHho6kOGuE"
+	},
+	"debug": {
+		"folderName": "/var/log/push-server",
+		"ip": [],
+		"trustProxy": true,
+		"combineLogs": true
+	}
+}

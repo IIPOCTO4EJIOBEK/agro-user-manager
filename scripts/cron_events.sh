@@ -1,0 +1,2 @@
+#!/bin/sh
+/usr/bin/php -f /home/bitrix/www/bitrix/modules/main/tools/cron_events.php

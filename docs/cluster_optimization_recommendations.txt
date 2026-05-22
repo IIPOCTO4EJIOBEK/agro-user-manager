@@ -1,0 +1,554 @@
+# ============================================================================
+# АНАЛИЗ И РЕКОМЕНДАЦИИ ПО ПРОИЗВОДИТЕЛЬНОСТИ КЛАСТЕРА BITRIX
+# Дата: 20 Февраля 2026
+# ============================================================================
+
+## 📊 ХАРАКТЕРИСТИКИ СЕРВЕРОВ
+
+### 10.0.1.230 (Bitrix Application + Push Server)
+```
+CPU: Intel Xeon Gold 6226 @ 2.70GHz (6 ядер, 6 потоков)
+RAM: 16 GB
+Disk: 20 GB (LVM: 17GB root, 2GB swap)
+OS: Rocky Linux / AlmaLinux 9
+```
+
+**Роль:**
+- Bitrix Application Server
+- Nginx (reverse proxy)
+- Push Server (порты 8010-8015, 9010-9011)
+
+---
+
+### 10.0.1.210 (MySQL + Redis + Apache + PostgreSQL)
+```
+CPU: Intel Xeon Gold 6226 @ 2.70GHz (4 ядра, 4 потока)
+RAM: 16 GB
+Disk: 20 GB (LVM: 17GB root, 2GB swap)
+OS: Rocky Linux / AlmaLinux 9
+```
+
+**Роль:**
+- MySQL 8.0 (InnoDB)
+- Redis 6.x
+- Apache 2.4 (mod_php)
+- PostgreSQL 15
+
+---
+
+### 10.0.1.130 (Jitsi Meet + Monitoring)
+```
+CPU: Intel Xeon Gold 6226 @ 2.70GHz (16 ядер, 16 потоков)
+RAM: 32 GB ECC
+Disk: 50 GB
+OS: Ubuntu 22.04
+```
+
+**Роль:**
+- Jitsi Meet (Prosody, Web, Jicofo)
+- Grafana
+- Prometheus
+
+---
+
+### 10.0.1.131 (Jitsi JVB + Java App)
+```
+CPU: Intel Xeon Gold 6226 @ 2.70GHz (16 ядер, 16 потоков)
+RAM: 32 GB ECC
+Disk: 50 GB
+OS: Ubuntu 22.04
+```
+
+**Роль:**
+- Jitsi Videobridge (Java)
+- Java Application
+
+---
+
+## ⚠️ ПРОБЛЕМЫ И УЗКИЕ МЕСТА
+
+### 🔴 КРИТИЧНЫЕ ПРОБЛЕМЫ
+
+#### 1. MySQL - Недостаточно памяти для InnoDB
+**Текущее значение:** `innodb_buffer_pool_size = 6GB`
+**Проблема:** На сервере 16GB RAM, MySQL забирает 37.5% всей памяти
+
+**Рекомендация:**
+- Для выделенного MySQL сервера: 70-80% RAM = 11-12GB
+- Для совместного использования: 50-60% RAM = 8-9GB
+
+```ini
+# /etc/mysql/conf.d/z_bx_custom.cnf
+[mysqld]
+innodb_buffer_pool_size = 8G
+innodb_buffer_pool_instances = 8
+innodb_log_file_size = 512M
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT_NO_FSYNC
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
+```
+
+---
+
+#### 2. Redis - Нет ограничения памяти
+**Текущее значение:** `maxmemory = 0` (без ограничений)
+**Проблема:** Redis может занять всю память и вызвать OOM
+
+**Рекомендация:**
+```bash
+# /etc/redis.conf
+maxmemory 4gb
+maxmemory-policy allkeys-lru
+maxmemory-samples 10
+```
+
+---
+
+#### 3. Apache + mod_php - Неэффективное использование памяти
+**Текущее значение:** 10+ процессов по ~19MB каждый
+**Проблема:** mod_php загружает PHP в каждый процесс Apache
+
+**Рекомендация:** Перейти на PHP-FPM
+
+```bash
+# Отключить mod_php
+sudo dnf remove libphp.so
+
+# Установить PHP-FPM
+sudo dnf install php-fpm
+
+# Настроить /etc/php-fpm.d/www.conf
+pm = dynamic
+pm.max_children = 20
+pm.start_servers = 5
+pm.min_spare_servers = 3
+pm.max_spare_servers = 10
+pm.max_requests = 500
+php_admin_value[memory_limit] = 256M
+```
+
+---
+
+### 🟡 ПРОБЛЕМЫ СРЕДНЕЙ ВАЖНОСТИ
+
+#### 4. PHP - Низкие лимиты
+**Текущее значение:**
+```
+memory_limit = 128M
+max_execution_time = 30
+upload_max_filesize = 2M
+post_max_size = 8M
+```
+
+**Рекомендация для Bitrix:**
+```ini
+; /etc/php.ini
+memory_limit = 512M
+max_execution_time = 300
+max_input_time = 300
+upload_max_filesize = 100M
+post_max_size = 100M
+```
+
+---
+
+#### 5. Nginx - Недостаточно worker процессов
+**Текущее значение:** `worker_processes = 8`
+**Проблема:** На сервере 6 ядер CPU
+
+**Рекомендация:**
+```nginx
+# /etc/nginx/nginx.conf
+worker_processes auto;
+worker_rlimit_nofile 65535;
+
+events {
+    worker_connections 4096;
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    open_file_cache max=100000 inactive=60s;
+    open_file_cache_valid 60s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+    
+    client_body_buffer_size 16m;
+    client_max_body_size 100m;
+    
+    proxy_buffer_size 128k;
+    proxy_buffers 16 256k;
+    proxy_busy_buffers_size 512k;
+    proxy_temp_file_write_size 512k;
+}
+```
+
+---
+
+#### 6. Системные лимиты - Низкий лимит файлов
+**Текущее значение:** `open files = 1024`
+**Проблема:** Недостаточно для высокой нагрузки
+
+**Рекомендация:**
+```bash
+# /etc/security/limits.conf
+* soft nofile 65535
+* hard nofile 65535
+root soft nofile 65535
+root hard nofile 65535
+
+# /etc/sysctl.conf
+fs.file-max = 2097152
+fs.inotify.max_user_watches = 524288
+net.core.somaxconn = 65535
+net.ipv4.tcp_max_syn_backlog = 65535
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+```
+
+---
+
+### 🟢 РЕКОМЕНДАЦИИ ПО ОПТИМИЗАЦИИ
+
+#### 7. MySQL - Дополнительные настройки
+
+```ini
+# /etc/mysql/conf.d/z_bx_custom.cnf
+
+[mysqld]
+# Buffer Pool
+innodb_buffer_pool_size = 8G
+innodb_buffer_pool_instances = 8
+innodb_buffer_pool_chunk_size = 1G
+
+# Log Buffer
+innodb_log_buffer_size = 64M
+innodb_log_file_size = 512M
+innodb_log_files_in_group = 2
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT_NO_FSYNC
+
+# IO
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
+innodb_read_io_threads = 8
+innodb_write_io_threads = 8
+
+# Table Cache
+table_open_cache = 16384
+table_open_cache_instances = 16
+table_definition_cache = 8192
+
+# Thread Cache
+thread_cache_size = 128
+thread_handling = pool-of-threads
+threads_per_cpu = 4
+
+# Query Cache (отключен в MySQL 8.0)
+# query_cache_type = 0
+
+# Temporary Tables
+tmp_table_size = 256M
+max_heap_table_size = 256M
+
+# Connections
+max_connections = 200
+max_connect_errors = 100000
+wait_timeout = 28800
+interactive_timeout = 28800
+
+# Binary Log (отключен если не используется репликация)
+disable_log_bin
+
+# Performance Schema
+performance_schema = ON
+performance_schema_instrument = '%=on'
+
+# Character Set
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+```
+
+---
+
+#### 8. Redis - Полная конфигурация
+
+```bash
+# /etc/redis.conf
+
+# Network
+bind 0.0.0.0
+port 6379
+timeout 300
+tcp-keepalive 60
+
+# General
+daemonize yes
+supervised systemd
+pidfile /var/run/redis/redis-server.pid
+loglevel notice
+logfile /var/log/redis/redis-server.log
+
+# Memory Management
+maxmemory 4gb
+maxmemory-policy allkeys-lru
+maxmemory-samples 10
+
+# Persistence (RDB)
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir /var/lib/redis
+
+# Persistence (AOF)
+appendonly yes
+appendfilename "appendonly.aof"
+appendfsync everysec
+no-appendfsync-on-rewrite no
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 64mb
+
+# Slow Log
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+
+# Advanced Config
+hash-max-ziplist-entries 512
+hash-max-ziplist-value 64
+list-max-ziplist-size -2
+set-max-intset-entries 512
+zset-max-ziplist-entries 128
+zset-max-ziplist-value 64
+activerehashing yes
+client-output-buffer-limit normal 0 0 0
+client-output-buffer-limit replica 256mb 64mb 60
+client-output-buffer-limit pubsub 32mb 8mb 60
+hz 10
+dynamic-hz yes
+```
+
+---
+
+#### 9. Apache - Оптимизация (если остаётся mod_php)
+
+```apache
+# /etc/httpd/conf.d/mpm_event.conf
+
+<IfModule mpm_event_module>
+    StartServers             5
+    MinSpareThreads         25
+    MaxSpareThreads         75
+    ThreadsPerChild         25
+    MaxRequestWorkers      200
+    MaxConnectionsPerChild   0
+    ServerLimit            200
+    ThreadLimit             64
+</IfModule>
+
+# /etc/httpd/conf.d/php.conf
+php_value memory_limit 256M
+php_value max_execution_time 300
+php_value upload_max_filesize 100M
+php_value post_max_size 100M
+```
+
+---
+
+#### 10. Nginx - Bitrix специфичные настройки
+
+```nginx
+# /etc/nginx/conf.d/bitrix.conf
+
+# Keypool
+map $http_host $keypool_host {
+    default $http_host;
+}
+
+# Caching
+proxy_cache_path /var/cache/nginx/bitrix levels=1:2 keys_zone=bitrix_cache:100m max_size=10g inactive=60m use_temp_path=off;
+
+# Main server block
+server {
+    listen 80;
+    server_name _;
+    
+    root /var/www;
+    index index.php index.html;
+    
+    # Logging
+    access_log /var/log/nginx/access.log combined;
+    error_log /var/log/nginx/error.log warn;
+    
+    # Gzip
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
+    
+    # Keepalive
+    keepalive_timeout 65;
+    keepalive_requests 1000;
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # PHP-FPM
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php-fpm/www.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 8 256k;
+        fastcgi_busy_buffers_size 512k;
+        fastcgi_read_timeout 300;
+        fastcgi_send_timeout 300;
+    }
+    
+    # Bitrix D7
+    location ~* ^.+\\.(htaccess|htaccess~|htgroup|htpasswd|ini|log|sh|sql|conf|bak|swp|dist|md|gitignore|gitattributes|env|xml|json)$ {
+        deny all;
+    }
+    
+    location ~* /\\.(git|svn|idea|hg|bzr|DS_Store) {
+        deny all;
+    }
+    
+    location ~ /\\.. {
+        deny all;
+    }
+    
+    # Cache static files
+    location ~* ^.+\\.(css|js|jpg|jpeg|gif|png|ico|cur|tif|tiff|svg|eot|otf|ttf|woff|woff2|mp4|webm|avi|ogv|wmv|flv|webp|pdf|doc|docx|xls|xlsx|ppt|pptx|rtf|rtx|txt|jar|exe|zip|rar|gz|tgz|bz2|dmg|pkg|deb|rpm|z|7z|tar)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+}
+```
+
+---
+
+## 📋 ПЛАН ДЕЙСТВИЙ
+
+### Этап 1: Критичные изменения (сделать немедленно)
+
+```bash
+# 1. Ограничить память Redis
+ssh 10.0.1.210
+sudo redis-cli CONFIG SET maxmemory 4gb
+sudo redis-cli CONFIG SET maxmemory-policy allkeys-lru
+sudo redis-cli CONFIG REWRITE
+
+# 2. Создать кастомный конфиг MySQL
+cat > /etc/mysql/conf.d/z_bx_custom.cnf << 'EOF'
+[mysqld]
+innodb_buffer_pool_size = 8G
+innodb_buffer_pool_instances = 8
+innodb_log_file_size = 512M
+innodb_flush_log_at_trx_commit = 1
+innodb_flush_method = O_DIRECT_NO_FSYNC
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
+table_open_cache = 16384
+thread_cache_size = 128
+max_connections = 200
+tmp_table_size = 256M
+max_heap_table_size = 256M
+EOF
+
+# Перезапуск MySQL (требуется для применения innodb_log_file_size)
+sudo systemctl restart mysqld
+
+# 3. Увеличить системные лимиты
+cat >> /etc/security/limits.conf << 'EOF'
+* soft nofile 65535
+* hard nofile 65535
+root soft nofile 65535
+root hard nofile 65535
+EOF
+
+cat >> /etc/sysctl.conf << 'EOF'
+fs.file-max = 2097152
+net.core.somaxconn = 65535
+net.ipv4.tcp_max_syn_backlog = 65535
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+EOF
+
+sudo sysctl -p
+```
+
+---
+
+### Этап 2: Оптимизация (в течение недели)
+
+1. **Перейти на PHP-FPM** (сервер 210)
+2. **Настроить Nginx** (сервер 230)
+3. **Оптимизировать Bitrix** (настройки в админке)
+
+---
+
+### Этап 3: Мониторинг (постоянно)
+
+```bash
+# Установить htop, iotop, nethogs
+sudo dnf install htop iotop nethogs
+
+# Проверка MySQL
+mysqltuner --host localhost --user root
+
+# Проверка Redis
+redis-cli --stat
+redis-cli slowlog get 10
+
+# Проверка Nginx
+nginx -T
+```
+
+---
+
+## 📊 ОЖИДАЕМЫЙ ЭФФЕКТ
+
+| Параметр | До | После | Улучшение |
+|----------|-----|-------|-----------|
+| MySQL Buffer Pool | 6GB (37%) | 8GB (50%) | +33% |
+| Redis maxmemory | 0 (∞) | 4GB | Контроль |
+| PHP память | 128M | 512M | +300% |
+| Nginx workers | 8 | auto | Оптимально |
+| Open files | 1024 | 65535 | +64x |
+| Max connections | 85 | 200 | +135% |
+
+---
+
+## ⚠️ ВАЖНО
+
+1. **Сделайте бэкап** перед внесением изменений
+2. **Тестируйте** изменения на staging окружении
+3. **Мониторьте** нагрузку после изменений
+4. **Перезапуск служб** требуется для применения некоторых настроек
+
+---
+
+## 📁 ФАЙЛЫ КОНФИГУРАЦИИ
+
+Все конфигурации сохранены в:
+- `/root/mysql_optimization.cnf`
+- `/root/redis_optimization.conf`
+- `/root/nginx_bitrix.conf`
+- `/root/php_optimization.ini`
+- `/root/system_limits.conf`
