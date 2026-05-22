@@ -88,34 +88,46 @@ app.post('/api/password/reset', isAuthenticated, async (req, res) => {
   }
 });
 
-// Create user
+// Create user (full v3-compatible)
 app.post('/api/users', isAuthenticated, async (req, res) => {
   try {
-    const data = req.body;
-    if (!data.sAMAccountName || !data.cn) {
-      return res.json({ success: false, message: 'Missing required fields' });
-    }
+    const d = req.body;
+    if (!d.sAMAccountName || !d.cn) return res.json({ success: false, message: 'Missing required fields' });
     const bind = global.currentBindDN || 'vardo001@rusagroeco.ru';
     const pass = global.currentBindPass || '!P09710023p2023';
     const host = global.currentLdapHost || 'ldap://10.0.2.21:389';
-    const ou = data.ou || 'OU=Users,DC=rusagroeco,DC=ru';
-    const dn = 'CN=' + data.cn + ',' + ou;
-    const fs = require('fs');
-    const pwdEncoded = Buffer.from('"' + (data.userPassword || 'Password123') + '"').toString('base64');
-    var ldif = 'dn: ' + dn + '\n'; 
-    ldif += 'objectClass: user\nobjectClass: organizationalPerson\nobjectClass: person\nobjectClass: top\n'; 
-    ldif += 'cn: ' + data.cn + '\nsn: ' + (data.sn || data.cn) + '\ngivenName: ' + (data.givenName || data.cn.split(' ')[0]) + '\n';
-    ldif += 'sAMAccountName: ' + data.sAMAccountName + '\n';
-    if (data.mail) ldif += 'mail: ' + data.mail + '\n';
-    ldif += 'unicodePwd:: ' + pwdEncoded + '\nuserAccountControl: 512\n';
-    const tmpfile = '/tmp/create_' + Date.now() + '.ldif';
-    fs.writeFileSync(tmpfile, ldif);
-    const result = require('child_process').execSync('ldapmodify -x -H ' + host + ' -D \"' + bind + '\" -w \"' + pass + '\" -f ' + tmpfile + ' 2>&1', {timeout: 10000});
-    fs.unlinkSync(tmpfile);
+    const ou = d.ou || 'OU=Users,DC=rusagroeco,DC=ru';
+    const dn = 'CN=' + d.cn + ',' + ou;
+    const pwdEnc = Buffer.from('"' + (d.userPassword || 'Password123') + '"').toString('base64');
+    var ldif = 'dn: ' + dn + '\nobjectClass: user\nobjectClass: organizationalPerson\nobjectClass: person\nobjectClass: top\n';
+    ldif += 'cn: ' + d.cn + '\nsn: ' + (d.sn || d.cn) + '\ngivenName: ' + (d.givenName || d.cn.split(' ')[0]) + '\n';
+    ldif += 'sAMAccountName: ' + d.sAMAccountName + '\n';
+    ldif += 'displayName: ' + d.cn + '\n';
+    if (d.mail) ldif += 'mail: ' + d.mail + '\n';
+    if (d.title) ldif += 'title: ' + d.title + '\n';
+    if (d.department) ldif += 'department: ' + d.department + '\n';
+    if (d.company) ldif += 'company: ' + d.company + '\n';
+    if (d.st) ldif += 'st: ' + d.st + '\n';
+    if (d.l) ldif += 'l: ' + d.l + '\n';
+    if (d.streetAddress) ldif += 'streetAddress: ' + d.streetAddress + '\n';
+    if (d.physicalDeliveryOfficeName) ldif += 'physicalDeliveryOfficeName: ' + d.physicalDeliveryOfficeName + '\n';
+    if (d.telephoneNumber) ldif += 'telephoneNumber: ' + d.telephoneNumber + '\n';
+    if (d.mobile) ldif += 'mobile: ' + d.mobile + '\n';
+    if (d.homePhone) ldif += 'homePhone: ' + d.homePhone + '\n';
+    if (d.description) ldif += 'description: ' + d.description + '\n';
+    if (d.info) ldif += 'info: ' + d.info + '\n';
+    if (d.extensionAttribute1) ldif += 'extensionAttribute1: ' + d.extensionAttribute1 + '\n';
+    if (d.extensionAttribute2) ldif += 'extensionAttribute2: ' + d.extensionAttribute2 + '\n';
+    if (d.extensionAttribute3) ldif += 'extensionAttribute3: ' + d.extensionAttribute3 + '\n';
+    if (d.manager) ldif += 'manager: ' + d.manager + '\n';
+    if (d.assistant) ldif += 'assistant: ' + d.assistant + '\n';
+    ldif += 'unicodePwd:: ' + pwdEnc + '\nuserAccountControl: 512\n';
+    var tmp = '/tmp/cu_' + Date.now() + '.ldif';
+    require('fs').writeFileSync(tmp, ldif);
+    require('child_process').execSync('ldapmodify -x -H ' + host + ' -D "' + bind + '" -w "' + pass + '" -f ' + tmp + ' 2>&1', {timeout: 10000});
+    require('fs').unlinkSync(tmp);
     res.json({ success: true, message: 'User created', dn: dn });
-  } catch(e) {
-    res.json({ success: false, message: e.message || 'Error' });
-  }
+  } catch(e) { res.json({ success: false, message: e.message || 'Error' }); }
 });
 
 
@@ -284,6 +296,8 @@ app.get('/groups', isAuthenticated, function(req,res){ res.render('pages/groups'
 app.get('/computers', isAuthenticated, function(req,res){ res.render('pages/computers', { title: 'Компьютеры', user: req.session.user, activePage: 'computers' }); });
 
 // Audit page
+
+app.get('/user/edit', isAuthenticated, function(req,res){ res.render('pages/user-edit', { title: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f', user: req.session.user, activePage: 'users' }); });
 app.get('/audit', isAuthenticated, function(req,res){ res.render('pages/audit', { title: 'Аудит', user: req.session.user, activePage: 'audit' }); });
 
 

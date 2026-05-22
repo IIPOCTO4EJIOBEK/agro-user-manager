@@ -1,0 +1,61 @@
+<%- include('../partials/header', { activePage: 'users' }) %>
+<div class="card">
+  <h3>✏️ Редактирование пользователя</h3>
+  <div class="fg" style="margin-bottom:16px">
+    <label>Поиск пользователя по логину</label>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="edit-search" placeholder="vardo001" style="flex:1" onkeyup="if(event.key==='Enter')loadUser()">
+      <button class="btn btn-p" onclick="loadUser()">🔍 Загрузить</button>
+    </div>
+  </div>
+  <div id="edit-form" style="display:none"></div>
+</div>
+<script>
+function loadUser(){
+  var sam = document.getElementById('edit-search').value.trim();
+  if(!sam) return;
+  fetch('/api/users/list?query=' + sam + '&limit=1').then(function(r){return r.json()}).then(function(d){
+    if(!d.success||!d.data||!d.data.length){alert('Пользователь не найден');return;}
+    var dn = d.data[0].dn;
+    fetch('/api/users/' + encodeURIComponent(dn)).then(function(r){return r.json()}).then(function(u){
+      if(!u.success){alert('Ошибка');return;}
+      showEditForm(u.data);
+    });
+  });
+}
+function showEditForm(u){
+  var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3>✏️ ' + esc(u.cn) + '</h3><code>' + esc(u.sAMAccountName) + '</code></div>' +
+    '<div class="row">' +
+    '<div class="fg"><label>Email</label><input id="ed-mail" value="' + esc(u.mail||'') + '"></div>' +
+    '<div class="fg"><label>Телефон</label><input id="ed-phone" value="' + esc(u.telephoneNumber||'') + '"></div></div>' +
+    '<div class="row">' +
+    '<div class="fg"><label>Должность</label><input id="ed-title" value="' + esc(u.title||'') + '"></div>' +
+    '<div class="fg"><label>Отдел</label><input id="ed-dept" value="' + esc(u.department||'') + '"></div></div>' +
+    '<div class="row">' +
+    '<div class="fg"><label>Компания</label><input id="ed-company" value="' + esc(u.company||'') + '"></div>' +
+    '<div class="fg"><label>Город</label><input id="ed-city" value="' + esc(u.l||'') + '"></div></div>' +
+    '<div class="row">' +
+    '<div class="fg"><label>Мобильный</label><input id="ed-mobile" value="' + esc(u.mobile||'') + '"></div>' +
+    '<div class="fg"><label>Описание</label><input id="ed-desc" value="' + esc(u.description||'') + '"></div></div>' +
+    '<button class="btn btn-p" style="margin-top:16px" onclick="saveUser(\'' + escAttr(u.dn) + '\')">💾 Сохранить</button>';
+  document.getElementById('edit-form').innerHTML = h;
+  document.getElementById('edit-form').style.display = 'block';
+}
+function saveUser(dn){
+  var data = {
+    mail: document.getElementById('ed-mail').value,
+    telephoneNumber: document.getElementById('ed-phone').value,
+    title: document.getElementById('ed-title').value,
+    department: document.getElementById('ed-dept').value,
+    company: document.getElementById('ed-company').value,
+    l: document.getElementById('ed-city').value,
+    mobile: document.getElementById('ed-mobile').value,
+    description: document.getElementById('ed-desc').value
+  };
+  fetch('/api/users/' + encodeURIComponent(dn), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)})
+    .then(function(r){return r.json()}).then(function(d){if(d.success)alert('Сохранено');else alert('Ошибка: ' + d.message);});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(s){return String(s||'').replace(/"/g,'&quot;');}
+</script>
+<%- include('../partials/footer') %>
