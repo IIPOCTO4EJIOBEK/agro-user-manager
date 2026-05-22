@@ -77,13 +77,69 @@ function showResetPwd(dn,sam){
   fetch('/api/password/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dn:dn,newPassword:p})}).then(function(r){return r.json()}).then(function(d){if(d.success)alert('Пароль сброшен');else alert('Ошибка: '+d.message);});
 }
 function showCreateUser(){
-  document.getElementById('userModalContent').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3>➕ Создать пользователя</h3><button class="btn btn-sm btn-o" onclick="closeModal()">✕</button></div>'+
-    '<div class="row"><div class="fg"><label>Имя *</label><input id="cu-fn" placeholder="Иван"></div><div class="fg"><label>Фамилия *</label><input id="cu-ln" placeholder="Иванов"></div></div>'+
-    '<div class="row"><div class="fg"><label>Логин *</label><input id="cu-sam" placeholder="ivanov.ii"></div><div class="fg"><label>Email</label><input id="cu-mail" placeholder="ivanov@company.ru"></div></div>'+
-    '<div class="fg"><label>OU</label><input id="cu-ou" value="OU=Users,DC=rusagroeco,DC=ru"></div>'+
-    '<div class="fg"><label>Пароль</label><input type="password" id="cu-pwd" placeholder="Минимум 8 символов"></div>'+
+  var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><h3>👤 Создать пользователя</h3><button class="btn btn-sm btn-o" onclick="closeModal()">✕</button></div>' +
+    '<div class="row"><div class="fg"><label>ФИО *</label><input id="cu-name" oninput="splitFio()" placeholder="Фамилия Имя Отчество"></div></div>' +
+    '<div class="row"><div class="fg"><label>Фамилия (ext1)</label><input id="cu-sn" readonly></div>' +
+    '<div class="fg"><label>Имя (ext2)</label><input id="cu-gn" readonly></div>' +
+    '<div class="fg"><label>Отчество (ext3)</label><input id="cu-pn" readonly></div></div>' +
+    '<div class="row"><div class="fg"><label>CN (авто)</label><input id="cu-cn" readonly></div>' +
+    '<div class="fg"><label>Логин (sam) *</label><input id="cu-sam" placeholder="ivanov.ii"></div></div>' +
+    '<div class="row"><div class="fg"><label>Регион *</label><input id="cu-st" placeholder="Краснодар"></div>' +
+    '<div class="fg"><label>OU *</label><input id="cu-ou" value="OU=Users,DC=rusagroeco,DC=ru"></div></div>' +
+    '<div class="row"><div class="fg"><label>Должность *</label><input id="cu-title" placeholder="Бухгалтер"></div>' +
+    '<div class="fg"><label>Компания</label><input id="cu-comp" placeholder="АО Агрохолдинг Просторы"></div></div>' +
+    '<div class="row"><div class="fg"><label>Отдел</label><input id="cu-dept" placeholder="Бухгалтерия"></div>' +
+    '<div class="fg"><label>Руководитель</label><input id="cu-mgr" placeholder="ivanov.ii"></div></div>' +
+    '<div class="row"><div class="fg"><label>Дата рождения</label><input id="cu-info" placeholder="ДД.ММ.ГГГГ"></div>' +
+    '<div class="fg"><label>Раб. телефон</label><input id="cu-work" placeholder="+7 (999) 999-99-99"></div></div>' +
+    '<div class="row"><div class="fg"><label>Мобильный</label><input id="cu-mob" placeholder="+7 (999) 999-99-99"></div>' +
+    '<div class="fg"><label>Личный тел.</label><input id="cu-pers" placeholder="+7 (999) 999-99-99"></div>' +
+    '<div class="fg"><label>Город</label><input id="cu-l" placeholder="Краснодар"></div></div>' +
+    '<div class="row"><div class="fg"><label>Адрес (Office)</label><input id="cu-office" placeholder="ул. Пушкинская, 123"></div>' +
+    '<div class="fg"><label>Описание</label><input id="cu-desc" placeholder="Доп. информация"></div></div>' +
+    '<div class="row"><div class="fg"><label>Пароль *</label><input type="password" id="cu-pwd" placeholder="мин. 8 символов"></div>' +
+    '<div class="fg"><label>Email</label><input id="cu-mail" placeholder="ivanov@company.ru"></div></div>' +
     '<div style="margin-top:16px;display:flex;gap:8px"><button class="btn btn-p" onclick="doCreateUser()">✅ Создать</button><button class="btn btn-o" onclick="closeModal()">Отмена</button></div>';
-  document.getElementById('userModal').style.display='flex';
+  document.getElementById('userModalContent').innerHTML = h;
+  document.getElementById('userModal').style.display = 'flex';
+}
+
+function splitFio(){
+  var name = document.getElementById('cu-name').value.trim().split(' ');
+  document.getElementById('cu-sn').value = name[0] || '';
+  document.getElementById('cu-gn').value = name[1] || '';
+  document.getElementById('cu-pn').value = name[2] || '';
+  document.getElementById('cu-cn').value = document.getElementById('cu-name').value.trim();
+}
+
+function doCreateUser(){
+  var data = {
+    cn: document.getElementById('cu-cn').value,
+    sn: document.getElementById('cu-sn').value,
+    givenName: document.getElementById('cu-gn').value,
+    extensionAttribute1: document.getElementById('cu-sn').value,
+    extensionAttribute2: document.getElementById('cu-gn').value,
+    extensionAttribute3: document.getElementById('cu-pn').value,
+    sAMAccountName: document.getElementById('cu-sam').value,
+    ou: document.getElementById('cu-ou').value,
+    title: document.getElementById('cu-title').value,
+    company: document.getElementById('cu-comp').value,
+    department: document.getElementById('cu-dept').value,
+    manager: document.getElementById('cu-mgr').value,
+    info: document.getElementById('cu-info').value,
+    telephoneNumber: document.getElementById('cu-work').value,
+    mobile: document.getElementById('cu-mob').value,
+    homePhone: document.getElementById('cu-pers').value,
+    l: document.getElementById('cu-l').value,
+    physicalDeliveryOfficeName: document.getElementById('cu-office').value,
+    description: document.getElementById('cu-desc').value,
+    st: document.getElementById('cu-st').value,
+    mail: document.getElementById('cu-mail').value,
+    userPassword: document.getElementById('cu-pwd').value
+  };
+  if(!data.sAMAccountName || !data.cn || !data.userPassword){alert('Заполните обязательные поля (*)');return;}
+  fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(function(r){return r.json()}).then(function(d){if(d.success){alert('Создан');closeModal();searchUsers();}else alert('Ошибка: '+d.message);});
 }
 function doCreateUser(){
   var data={cn:document.getElementById('cu-fn').value+' '+document.getElementById('cu-ln').value,givenName:document.getElementById('cu-fn').value,sn:document.getElementById('cu-ln').value,sAMAccountName:document.getElementById('cu-sam').value,mail:document.getElementById('cu-mail').value,ou:document.getElementById('cu-ou').value,userPassword:document.getElementById('cu-pwd').value};

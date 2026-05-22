@@ -13,6 +13,9 @@
   <a href="/groups" class="card" style="display:flex;align-items:center;gap:16px;text-decoration:none"><span style="font-size:32px">👥</span><div><b>Группы</b><br><span style="font-size:12px;color:var(--text-secondary)">Группы безопасности</span></div></a>
 </div>
 
+<div class="card"><h3>🔍 Быстрый поиск</h3><input type="text" id="qsearch" placeholder="Введите имя или логин..." onkeyup="if(event.key==='Enter')quickSearch()" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:14px"><div id="qresults" style="margin-top:8px"></div></div>
+<div class="card"><h3>🕐 Последние действия</h3><div id="recentAudit">Загрузка...</div></div>
+
 <div class="card">
   <h3>📡 Состояние системы</h3>
   <div id="systemStatus"><span class="spinner"></span> Загрузка...</div>
