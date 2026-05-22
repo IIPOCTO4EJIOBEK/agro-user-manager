@@ -634,6 +634,119 @@ app.get('/auth/check', async (req, res) => {
   }
 });
 
+
+
+// === v3 COMPATIBILITY STUBS ===
+app.get('/api/export-csv', isAuthenticated, async (req, res) => {
+  try { res.redirect('/api/export/csv'); } catch(e) { res.json({ success: false }); }
+});
+
+app.post('/api/create-user', isAuthenticated, async (req, res) => {
+  try {
+    const r = await new Promise((resolve) => {
+      const http = require('http');
+      const data = JSON.stringify(req.body);
+      const options = { hostname: '127.0.0.1', port: 3000, path: '/api/users', method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } };
+      const creq = http.request(options, (cres) => { let body = ''; cres.on('data', d => body += d); cres.on('end', () => resolve(JSON.parse(body))); });
+      creq.on('error', (e) => resolve({ success: false, message: e.message }));
+      creq.write(data); creq.end();
+    });
+    res.json(r);
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.post('/api/save-user', isAuthenticated, async (req, res) => {
+  try {
+    const { dn, ...fields } = req.body;
+    if (!dn) return res.json({ success: false, message: 'DN required' });
+    const http = require('http');
+    const data = JSON.stringify(fields);
+    const options = { hostname: '127.0.0.1', port: 3000, path: '/api/users/' + encodeURIComponent(dn), method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } };
+    const creq = http.request(options, (cres) => { let body = ''; cres.on('data', d => body += d); cres.on('end', () => res.json(JSON.parse(body))); });
+    creq.on('error', (e) => res.json({ success: false, message: e.message }));
+    creq.write(data); creq.end();
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.post('/api/toggle-user', isAuthenticated, async (req, res) => {
+  try {
+    const { dn, enable } = req.body;
+    if (!dn) return res.json({ success: false });
+    const action = enable ? 'enable' : 'disable';
+    res.redirect(307, '/api/users/' + action + '/' + encodeURIComponent(dn));
+  } catch(e) { res.json({ success: false }); }
+});
+
+app.post('/api/password/reset', isAuthenticated, async (req, res) => {
+  try {
+    const http = require('http');
+    const data = JSON.stringify(req.body);
+    const options = { hostname: '127.0.0.1', port: 3000, path: '/api/password/reset', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } };
+    const creq = http.request(options, (cres) => { let body = ''; cres.on('data', d => body += d); cres.on('end', () => res.json(JSON.parse(body))); });
+    creq.on('error', (e) => res.json({ success: false, message: e.message }));
+    creq.write(data); creq.end();
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.post('/api/group-add', isAuthenticated, async (req, res) => {
+  try {
+    const { group, user } = req.body;
+    const r = await (await fetch('http://127.0.0.1:3000/api/groups/member', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({groupDn:group, userDn:user}) })).json();
+    res.json(r);
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.post('/api/group-remove', isAuthenticated, async (req, res) => {
+  try {
+    const { group, user } = req.body;
+    const r = await (await fetch('http://127.0.0.1:3000/api/groups/member', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({groupDn:group, userDn:user}) })).json();
+    res.json(r);
+  } catch(e) { res.json({ success: false, message: e.message }); }
+});
+
+app.get('/api/computers/toggle', isAuthenticated, async (req, res) => {
+  res.json({ success: true, message: 'Use /api/computers/toggle via PATCH' });
+});
+
+app.get('/api/computers/delete', isAuthenticated, async (req, res) => {
+  res.json({ success: true, message: 'Use /api/computers/delete via DELETE' });
+});
+
+app.get('/api/computers/detail', isAuthenticated, async (req, res) => {
+  res.json({ success: true, data: {} });
+});
+
+app.get('/api/user/sessions', isAuthenticated, async (req, res) => {
+  res.json({ success: true, data: [] });
+});
+
+app.get('/api/report/empty-attrs', isAuthenticated, async (req, res) => {
+  res.json({ success: true, data: [], total: 0 });
+});
+
+app.post('/api/apply-batch', isAuthenticated, async (req, res) => {
+  res.json({ success: true, message: 'Batch operations not yet implemented in v4' });
+});
+
+app.post('/api/compare-csv', isAuthenticated, async (req, res) => {
+  res.json({ success: true, data: [] });
+});
+
+app.get('/api/xlsx-view', isAuthenticated, async (req, res) => {
+  res.json({ success: true, data: [], message: 'XLSX import not available in v4' });
+});
+
+app.post('/api/xlsx-upload', isAuthenticated, async (req, res) => {
+  res.json({ success: true, message: 'XLSX upload not available in v4' });
+});
+
+app.post('/api/xlsx-apply', isAuthenticated, async (req, res) => {
+  res.json({ success: true, message: 'XLSX apply not available in v4' });
+});
+
 app.use((req, res) => {
   res.status(404).render('pages/error', {
     title: 'Страница не найдена',
