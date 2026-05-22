@@ -1,62 +1,14 @@
-<div class="page-content">
-  <h2><i class="fas fa-chart-line"></i> Мониторинг Active Directory</h2>
-  
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-      <div class="stat-info">
-        <h3 id="totalUsers">-</h3>
-        <p>Всего пользователей</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
-      <div class="stat-info">
-        <h3 id="enabledUsers">-</h3>
-        <p>Активных</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon red"><i class="fas fa-user-times"></i></div>
-      <div class="stat-info">
-        <h3 id="disabledUsers">-</h3>
-        <p>Отключенных</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon purple"><i class="fas fa-sitemap"></i></div>
-      <div class="stat-info">
-        <h3 id="totalGroups">-</h3>
-        <p>Групп</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="groups-section">
-    <h3><i class="fas fa-folder-tree"></i> Группы безопасности</h3>
-    <table class="data-table">
-      <thead><tr><th>Группа</th><th>DN</th><th>Членов</th></tr></thead>
-      <tbody id="groupsBody"><tr><td colspan="3">Загрузка...</td></tr></tbody>
-    </table>
+<%- include('../partials/header', { activePage: 'monitoring' }) %>
+<div class="card">
+  <h3><i class="fas fa-chart-line"></i> Мониторинг AD</h3>
+  <div id="monStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+    <div class="stat-card"><div class="num" id="mTotal">-</div><div class="lbl">Всего пользователей</div></div>
+    <div class="stat-card"><div class="num" id="mActive">-</div><div class="lbl">Активных</div></div>
+    <div class="stat-card"><div class="num" id="mDisabled">-</div><div class="lbl">Отключенных</div></div>
+    <div class="stat-card"><div class="num" id="mGroups">-</div><div class="lbl">Групп</div></div>
   </div>
 </div>
-
 <script>
-fetch('/api/monitoring/stats').then(r=>r.json()).then(data => {
-  if (data.success) {
-    document.getElementById('totalUsers').textContent = data.data.totalUsers;
-    document.getElementById('enabledUsers').textContent = data.data.enabledUsers;
-    document.getElementById('disabledUsers').textContent = data.data.disabledUsers;
-    document.getElementById('totalGroups').textContent = data.data.totalGroups;
-  }
-});
-
-fetch('/api/monitoring/groups').then(r=>r.json()).then(data => {
-  const tbody = document.getElementById('groupsBody');
-  if (!data.data || data.data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3">Нет данных</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.data.map(g => `<tr><td>${g.cn}</td><td><small>${g.dn}</small></td><td>${g.memberCount}</td></tr>`).join('');
-});
+fetch('/api/monitoring/stats').then(r=>r.json()).then(function(d){if(d.success){document.getElementById('mTotal').textContent=d.data.totalUsers;document.getElementById('mActive').textContent=d.data.enabledUsers;document.getElementById('mDisabled').textContent=d.data.disabledUsers;document.getElementById('mGroups').textContent=d.data.totalGroups;}}).catch(function(){});
 </script>
+<%- include('../partials/footer') %>

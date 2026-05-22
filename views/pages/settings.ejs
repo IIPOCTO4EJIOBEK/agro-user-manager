@@ -1,67 +1,9 @@
-<div class="page-content">
-  <h2><i class="fas fa-cog"></i> Настройки системы</h2>
-
-  <div class="settings-section">
-    <h3><i class="fas fa-server"></i> LDAP подключение</h3>
-    <div id="ldapStatus" class="status-box">Проверка...</div>
-    
-    <form onsubmit="testLDAP(event)" class="settings-form">
-      <div class="form-group">
-        <label>Admin DN</label>
-        <input type="text" id="testAdminDN" placeholder="CN=Administrator,CN=Users,..." />
-      </div>
-      <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" id="testAdminPass" placeholder="Пароль администратора" />
-      </div>
-      <button type="submit" class="btn btn-primary"><i class="fas fa-plug"></i> Проверить подключение</button>
-    </form>
-  </div>
-
-  <div class="settings-section">
-    <h3><i class="fas fa-users-cog"></i> Группы доступа</h3>
-    <table class="data-table">
-      <thead><tr><th>Роль</th><th>Группа AD</th></tr></thead>
-      <tbody>
-        <tr><td>Администраторы</td><td><%= typeof user !== 'undefined' && user.groups ? user.groups.join(', ') : '-' %></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="settings-section">
-    <h3><i class="fas fa-info-circle"></i> Информация о системе</h3>
-    <div class="info-grid">
-      <div><strong>Версия:</strong> 4.0</div>
-      <div><strong>Node.js:</strong> <span id="nodeVersion">-</span></div>
-      <div><strong>Режим:</strong> <%= typeof process !== 'undefined' && process.env.NODE_ENV ? process.env.NODE_ENV : 'development' %></div>
-    </div>
-  </div>
+<%- include('../partials/header', { activePage: 'settings' }) %>
+<div class="card">
+  <h3><i class="fas fa-cog"></i> Настройки</h3>
+  <div id="settingsContent"><div class="spinner"></div> Загрузка...</div>
 </div>
-
 <script>
-fetch('/api/settings/ldap-status').then(r=>r.json()).then(data => {
-  const div = document.getElementById('ldapStatus');
-  if (data.success && data.data.connected) {
-    div.className = 'status-box success';
-    div.innerHTML = '<i class="fas fa-check-circle"></i> Подключено к: ' + data.data.domainName + 
-                    '<br><small>Primary: ' + data.data.primaryHost + '</small>';
-  } else {
-    div.className = 'status-box error';
-    div.innerHTML = '<i class="fas fa-exclamation-circle"></i> Не подключено: ' + (data.data?.error || 'Ошибка');
-  }
-});
-
-function testLDAP(e) {
-  e.preventDefault();
-  const adminDN = document.getElementById('testAdminDN').value;
-  const adminPassword = document.getElementById('testAdminPass').value;
-  
-  fetch('/api/settings/test-ldap', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({adminDN, adminPassword})
-  }).then(r=>r.json()).then(data => {
-    alert(data.message);
-  });
-}
+fetch('/api/settings/ldap-status').then(r=>r.json()).then(function(d){var h='<div class="card"><h3><i class="fas fa-server"></i> LDAP подключение</h3>';if(d.success){h+='<p><span style="color:var(--success)"><i class="fas fa-check-circle"></i> Подключен</span></p><p>Сервер: '+d.data.server+'</p><p>Домен: '+d.data.domain+'</p>';}else{h+='<p><span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Ошибка: '+(d.data&&d.data.error||'Неизвестно')+'</span></p>';}h+='</div>';document.getElementById('settingsContent').innerHTML=h;}).catch(function(){document.getElementById('settingsContent').innerHTML='<p>Ошибка загрузки</p>';});
 </script>
+<%- include('../partials/footer') %>

@@ -1,103 +1,29 @@
+<%- include('../partials/header', { activePage: 'dashboard' }) %>
 <div class="dashboard">
   <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon blue">
-        <i class="fas fa-users"></i>
-      </div>
-      <div class="stat-info">
-        <h3 id="totalUsers">-</h3>
-        <p>Пользователей в AD</p>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon green">
-        <i class="fas fa-user-check"></i>
-      </div>
-      <div class="stat-info">
-        <h3 id="enabledUsers">-</h3>
-        <p>Активных пользователей</p>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon red">
-        <i class="fas fa-user-times"></i>
-      </div>
-      <div class="stat-info">
-        <h3 id="disabledUsers">-</h3>
-        <p>Отключенных пользователей</p>
-      </div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-icon purple">
-        <i class="fas fa-sitemap"></i>
-      </div>
-      <div class="stat-info">
-        <h3 id="totalGroups">-</h3>
-        <p>Групп безопасности</p>
-      </div>
-    </div>
+    <div class="stat-card"><div class="num" id="totalUsers">-</div><div class="lbl">Пользователей в AD</div></div>
+    <div class="stat-card"><div class="num" id="enabledUsers">-</div><div class="lbl">Активных пользователей</div></div>
+    <div class="stat-card"><div class="num" id="disabledUsers">-</div><div class="lbl">Отключенных пользователей</div></div>
+    <div class="stat-card"><div class="num" id="totalGroups">-</div><div class="lbl">Групп безопасности</div></div>
   </div>
 
+  <h3 style="margin:24px 0 16px"><i class="fas fa-bolt"></i> Быстрые действия</h3>
   <div class="quick-actions">
-    <h2><i class="fas fa-bolt"></i> Быстрые действия</h2>
-    <div class="action-buttons">
-      <a href="/users" class="action-btn">
-        <i class="fas fa-users"></i>
-        <span>Управление пользователями</span>
-      </a>
-      <a href="/wifi" class="action-btn">
-        <i class="fas fa-wifi"></i>
-        <span>WiFi & SMS</span>
-      </a>
-      <a href="/monitoring" class="action-btn">
-        <i class="fas fa-chart-line"></i>
-        <span>Мониторинг</span>
-      </a>
-      <a href="/settings" class="action-btn">
-        <i class="fas fa-cog"></i>
-        <span>Настройки</span>
-      </a>
-    </div>
+    <a href="/users"><i class="fas fa-users" style="background:var(--primary-light);color:var(--primary)"></i> Управление пользователями</a>
+    <a href="/wifi"><i class="fas fa-wifi" style="background:var(--success-light);color:var(--success)"></i> WiFi & SMS</a>
+    <a href="/monitoring"><i class="fas fa-chart-line" style="background:var(--warning-light);color:var(--warning)"></i> Мониторинг</a>
+    <a href="/settings"><i class="fas fa-cog" style="background:#f3e8ff;color:#9333ea"></i> Настройки</a>
   </div>
 
-  <div class="recent-activity">
-    <h2><i class="fas fa-clock"></i> Состояние системы</h2>
-    <div class="activity-list" id="systemStatus">
-      <div class="loading">Загрузка...</div>
-    </div>
+  <div class="card" style="margin-top:24px">
+    <h3><i class="fas fa-server"></i> Состояние системы</h3>
+    <div id="systemStatus"><div class="spinner"></div> Загрузка...</div>
   </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Load AD stats
-  fetch('/api/monitoring/stats')
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        document.getElementById('totalUsers').textContent = data.data.totalUsers;
-        document.getElementById('enabledUsers').textContent = data.data.enabledUsers;
-        document.getElementById('disabledUsers').textContent = data.data.disabledUsers;
-        document.getElementById('totalGroups').textContent = data.data.totalGroups;
-      }
-    })
-    .catch(console.error);
-
-  // Check LDAP status
-  fetch('/api/settings/ldap-status')
-    .then(r => r.json())
-    .then(data => {
-      const statusHtml = data.success && data.data.connected 
-        ? '<div class="status-item success"><i class="fas fa-check-circle"></i> LDAP подключен: ' + data.data.domainName + '</div>'
-        : '<div class="status-item error"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: ' + (data.data?.error || 'Ошибка') + '</div>';
-      document.getElementById('systemStatus').innerHTML = statusHtml;
-    })
-    .catch(err => {
-      document.getElementById('systemStatus').innerHTML = 
-        '<div class="status-item error"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</div>';
-    });
+  fetch('/api/monitoring/stats').then(r=>r.json()).then(d=>{if(d.success){document.getElementById('totalUsers').textContent=d.data.totalUsers;document.getElementById('enabledUsers').textContent=d.data.enabledUsers;document.getElementById('disabledUsers').textContent=d.data.disabledUsers;document.getElementById('totalGroups').textContent=d.data.totalGroups;}}).catch(()=>{});
+  fetch('/api/settings/ldap-status').then(r=>r.json()).then(d=>{document.getElementById('systemStatus').innerHTML=d.success&&d.data.connected?'<span style="color:var(--success)"><i class="fas fa-check-circle"></i> LDAP подключен: '+d.data.domain+'</span>':'<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: '+(d.data&&d.data.error||'Ошибка')+'</span>';}).catch(()=>{document.getElementById('systemStatus').innerHTML='<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</span>';});
 });
 </script>
+<%- include('../partials/footer') %>
