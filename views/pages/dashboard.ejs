@@ -1,0 +1,103 @@
+<div class="dashboard">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="stat-info">
+        <h3 id="totalUsers">-</h3>
+        <p>Пользователей в AD</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <i class="fas fa-user-check"></i>
+      </div>
+      <div class="stat-info">
+        <h3 id="enabledUsers">-</h3>
+        <p>Активных пользователей</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon red">
+        <i class="fas fa-user-times"></i>
+      </div>
+      <div class="stat-info">
+        <h3 id="disabledUsers">-</h3>
+        <p>Отключенных пользователей</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon purple">
+        <i class="fas fa-sitemap"></i>
+      </div>
+      <div class="stat-info">
+        <h3 id="totalGroups">-</h3>
+        <p>Групп безопасности</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <h2><i class="fas fa-bolt"></i> Быстрые действия</h2>
+    <div class="action-buttons">
+      <a href="/users" class="action-btn">
+        <i class="fas fa-users"></i>
+        <span>Управление пользователями</span>
+      </a>
+      <a href="/wifi" class="action-btn">
+        <i class="fas fa-wifi"></i>
+        <span>WiFi & SMS</span>
+      </a>
+      <a href="/monitoring" class="action-btn">
+        <i class="fas fa-chart-line"></i>
+        <span>Мониторинг</span>
+      </a>
+      <a href="/settings" class="action-btn">
+        <i class="fas fa-cog"></i>
+        <span>Настройки</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="recent-activity">
+    <h2><i class="fas fa-clock"></i> Состояние системы</h2>
+    <div class="activity-list" id="systemStatus">
+      <div class="loading">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Load AD stats
+  fetch('/api/monitoring/stats')
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('totalUsers').textContent = data.data.totalUsers;
+        document.getElementById('enabledUsers').textContent = data.data.enabledUsers;
+        document.getElementById('disabledUsers').textContent = data.data.disabledUsers;
+        document.getElementById('totalGroups').textContent = data.data.totalGroups;
+      }
+    })
+    .catch(console.error);
+
+  // Check LDAP status
+  fetch('/api/settings/ldap-status')
+    .then(r => r.json())
+    .then(data => {
+      const statusHtml = data.success && data.data.connected 
+        ? '<div class="status-item success"><i class="fas fa-check-circle"></i> LDAP подключен: ' + data.data.domainName + '</div>'
+        : '<div class="status-item error"><i class="fas fa-exclamation-circle"></i> LDAP не подключен: ' + (data.data?.error || 'Ошибка') + '</div>';
+      document.getElementById('systemStatus').innerHTML = statusHtml;
+    })
+    .catch(err => {
+      document.getElementById('systemStatus').innerHTML = 
+        '<div class="status-item error"><i class="fas fa-exclamation-circle"></i> Ошибка проверки LDAP</div>';
+    });
+});
+</script>
