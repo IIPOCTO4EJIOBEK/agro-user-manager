@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - AD Manager Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">🔐</div>
+        <div>
+          <div class="sidebar-title">AD Manager</div>
+          <div class="sidebar-subtitle">v4.0 Enterprise</div>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a href="/dashboard" class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'active' : '' %>">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        
+        <% if (typeof user !== 'undefined' && user) { %>
+          <!-- Users - AD Admins only -->
+          <li class="nav-item">
+            <a href="/users" class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'users' ? 'active' : '' %>">
+              <span class="nav-icon">👥</span>
+              <span>Users</span>
+            </a>
+          </li>
+
+          <!-- WiFi - Network Admins & WiFi Managers -->
+          <li class="nav-item">
+            <a href="/wifi" class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'wifi' ? 'active' : '' %>">
+              <span class="nav-icon">📶</span>
+              <span>WiFi & SMS</span>
+            </a>
+          </li>
+
+          <!-- Monitoring - Monitoring Group -->
+          <li class="nav-item">
+            <a href="/monitoring" class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'monitoring' ? 'active' : '' %>">
+              <span class="nav-icon">🖥</span>
+              <span>Monitoring</span>
+            </a>
+          </li>
+
+          <!-- Settings - Admins only -->
+          <li class="nav-item">
+            <a href="/settings" class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'settings' ? 'active' : '' %>">
+              <span class="nav-icon">⚙️</span>
+              <span>Settings</span>
+            </a>
+          </li>
+        <% } %>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 700; color: #1e293b;"><%= title %></h2>
+          <p style="font-size: 14px; color: #64748b; margin-top: 4px;">
+            Welcome back to your control panel
+          </p>
+        </div>
+
+        <% if (typeof user !== 'undefined' && user) { %>
+          <div class="user-info">
+            <div class="user-avatar">
+              <%= user.displayName ? user.displayName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() %>
+            </div>
+            <div class="user-details">
+              <h3><%= user.displayName || user.username %></h3>
+              <p><%= user.email || user.username %>@example.com</p>
+            </div>
+            <a href="/logout" class="btn-logout">Logout</a>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Page Content -->
+      <%- body %>
+    </main>
+  </div>
+</body>
+</html>

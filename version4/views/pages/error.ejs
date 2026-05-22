@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - AD Manager Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box" style="max-width: 600px; text-align: center;">
+      <div class="login-logo" style="margin-bottom: 24px;">⚠️</div>
+      
+      <h1 style="font-size: 28px; font-weight: 700; color: var(--dark-color); margin-bottom: 12px;">
+        <%= title %>
+      </h1>
+      
+      <p style="font-size: 16px; color: var(--gray-600); margin-bottom: 32px; line-height: 1.6;">
+        <%= message %>
+      </p>
+
+      <% if (typeof error !== 'undefined' && error && error.stack) { %>
+        <div style="text-align: left; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
+          <code style="font-size: 13px; color: #991b1b; white-space: pre-wrap;"><%= error.stack %></code>
+        </div>
+      <% } %>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <a href="javascript:history.back()" class="btn" style="background: var(--gray-100); color: var(--gray-700); width: auto;">
+          ← Go Back
+        </a>
+        <a href="/dashboard" class="btn btn-primary" style="width: auto;">
+          🏠 Dashboard
+        </a>
+        <a href="/login" class="btn" style="background: var(--gray-100); color: var(--gray-700); width: auto;">
+          Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

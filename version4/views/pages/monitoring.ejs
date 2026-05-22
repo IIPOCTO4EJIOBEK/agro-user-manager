@@ -1,0 +1,136 @@
+<div class="content-card">
+  <div class="content-header">
+    <h2>System Monitoring</h2>
+    <p>Real-time server and network metrics</p>
+  </div>
+
+  <div class="cards-grid" style="margin-bottom: 24px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon primary">🖥</div>
+      </div>
+      <div class="card-title">CPU Usage</div>
+      <div class="card-value">45.2%</div>
+      <div style="margin-top: 12px; background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden;">
+        <div style="width: 45%; height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); border-radius: 10px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon success">💾</div>
+      </div>
+      <div class="card-title">Memory Usage</div>
+      <div class="card-value">67.8%</div>
+      <div style="margin-top: 12px; background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden;">
+        <div style="width: 68%; height: 100%; background: linear-gradient(90deg, #10b981, #06b6d4); border-radius: 10px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon warning">💿</div>
+      </div>
+      <div class="card-title">Disk Usage</div>
+      <div class="card-value">34.5%</div>
+      <div style="margin-top: 12px; background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden;">
+        <div style="width: 35%; height: 100%; background: linear-gradient(90deg, #f59e0b, #ef4444); border-radius: 10px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon info">⏱</div>
+      </div>
+      <div class="card-title">Uptime</div>
+      <div class="card-value">15d 4h</div>
+      <div class="card-change positive">
+        <span>Since last reboot</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <div class="content-card" style="background: #f8fafc; margin-top: 0;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">Network Traffic</h3>
+      <div style="height: 200px; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 20px 0;">
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 45%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 62%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 38%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 75%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 58%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 82%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 67%;"></div>
+        <div style="flex: 1; background: linear-gradient(180deg, rgba(79, 70, 229, 0.3), rgba(79, 70, 229, 0.1)); border-radius: 4px 4px 0 0; height: 91%;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-top: 8px;">
+        <span>00:00</span>
+        <span>03:00</span>
+        <span>06:00</span>
+        <span>09:00</span>
+        <span>12:00</span>
+        <span>15:00</span>
+        <span>18:00</span>
+        <span>21:00</span>
+      </div>
+    </div>
+
+    <div class="content-card" style="background: #f8fafc; margin-top: 0;">
+      <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">Active Services</h3>
+      
+      <div style="space-y: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+            <span style="font-weight: 500; color: #1e293b;">LDAP Service</span>
+          </div>
+          <span style="font-size: 12px; color: #10b981; font-weight: 600;">Running</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+            <span style="font-weight: 500; color: #1e293b;">MikroTik API</span>
+          </div>
+          <span style="font-size: 12px; color: #10b981; font-weight: 600;">Running</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+            <span style="font-weight: 500; color: #1e293b;">SMS Gateway</span>
+          </div>
+          <span style="font-size: 12px; color: #10b981; font-weight: 600;">Running</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+            <span style="font-weight: 500; color: #1e293b;">Redis Cache</span>
+          </div>
+          <span style="font-size: 12px; color: #10b981; font-weight: 600;">Running</span>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></div>
+            <span style="font-weight: 500; color: #1e293b;">MySQL Database</span>
+          </div>
+          <span style="font-size: 12px; color: #10b981; font-weight: 600;">Running</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card" style="background: #f8fafc; margin-top: 0;">
+    <h3 style="font-size: 16px; margin-bottom: 16px; color: #1e293b;">System Logs (Last 5 entries)</h3>
+    
+    <div style="font-family: 'Courier New', monospace; font-size: 13px; background: #1e293b; color: #10b981; padding: 16px; border-radius: 10px;">
+      <div style="margin-bottom: 8px;">[2024-01-15 14:32:18] ✓ User authentication successful: admin@example.com</div>
+      <div style="margin-bottom: 8px;">[2024-01-15 14:31:45] ✓ WiFi voucher generated: VCH-8472-XKPL</div>
+      <div style="margin-bottom: 8px;">[2024-01-15 14:30:22] ⚠ High memory usage detected: 85%</div>
+      <div style="margin-bottom: 8px;">[2024-01-15 14:28:56] ✓ Backup completed successfully (2.4 GB)</div>
+      <div>[2024-01-15 14:25:10] ✓ LDAP sync completed: 2,543 users</div>
+    </div>
+  </div>
+</div>
