@@ -15,10 +15,30 @@ router.get('/login', (req, res) => {
 });
 
 // POST /login - Handle login
+router.post('/auth/login', async (req, res) => {
+  // v3-compatible: accepts JSON {username, password, adIp}
+  try {
+    const { username, password, adIp } = req.body;
+    if (!username || !password) return res.status(400).json({ success: false, error: 'Missing fields' });
+    const loginName = username.includes('\\') ? username.split('\\')[1] : username.includes('@') ? username.split('@')[0] : username;
+    const adLogin = loginName + '@rusagroeco.ru';
+    var ldapHost = process.env.LDAP_ACTIVE_HOST || 'ldap://10.0.2.21:389';
+    if (adIp) { ldapHost = 'ldap://' + adIp + ':389'; process.env.LDAP_ACTIVE_HOST = ldapHost; }
+    const result = await require('../models/ldap').authenticate(adLogin, password);
+    if (result && result.success) {
+      req.session.user = { sAMAccountName: loginName, cn: result.user.cn || loginName };
+      return res.json({ success: true, server: adIp || '10.0.2.21' });
+    }
+    res.status(401).json({ success: false, error: 'Invalid credentials' });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 router.post('/login', async (req, res) => {
   try {
-    const { username, password, adServer } = req.body;
-    if (adServer) { req.session.adServer = adServer; process.env.LDAP_ACTIVE_HOST = 'ldap://' + adServer + ':389'; }
+    const { username, password, adServer, adIp } = req.body;
+    if (adServer) { req.session.adServer = adServer; process.env.LDAP_ACTIVE_HOST = 'ldap://' + adServer + ':389'; } else if (adIp) { req.session.adServer = adIp; process.env.LDAP_ACTIVE_HOST = 'ldap://' + adIp + ':389'; }
     const loginName = username.includes('\\') ? username.split('\\')[1] : username.includes('@') ? username.split('@')[0] : username;
     const adLogin = loginName + '@rusagroeco.ru';
 
