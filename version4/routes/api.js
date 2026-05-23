@@ -526,37 +526,38 @@ router.get('/computers/detail', isAuth, async (req, res) => {
 router.get('/user/sessions', isAuth, async (req, res) => {
   try {
     const sam = req.query.sam;
-    if (!sam) return res.json({ success: true, sessions: [] });
+    if (!sam) return res.json({ success: true, logon: {}, computers: [] });
     const bind = getBindInfo(req);
     const { execSync } = require('child_process');
-    var out = execSync("ldapsearch -x -H '" + bind.host + "' -D '" + bind.bindDN + "' -w '" + bind.bindPass + "' -b 'DC=rusagroeco,DC=ru' '(&(objectClass=user)(sAMAccountName=" + sam.replace(/[()*\\]/g,'') + "))' lastLogon lastLogonTimestamp logonCount badPwdCount pwdLastSet whenCreated -LLL 2>/dev/null", {shell:'/bin/bash', timeout:15000, maxBuffer:5*1024*1024}).toString();
-    var sessions = [], cur = {};
+    var out = execSync("set +H; ldapsearch -x -H '" + bind.host + "' -D '" + bind.bindDN + "' -w '" + bind.bindPass + "' -b 'DC=rusagroeco,DC=ru' '(&(objectClass=user)(sAMAccountName=" + sam.replace(/[()*\\]/g,'') + "))' lastLogon lastLogonTimestamp logonCount badPwdCount pwdLastSet whenCreated userAccountControl -LLL 2>/dev/null", {shell:'/bin/bash', timeout:15000, maxBuffer:5*1024*1024}).toString();
+    var cur = {};
     out.split('\n').forEach(function(line) {
-      if (line.startsWith('lastLogon: ') && !cur.lastLogon) cur.lastLogon = line.substring(11);
-      else if (line.startsWith('lastLogonTimestamp: ') && !cur.lastLogonTimestamp) cur.lastLogonTimestamp = line.substring(19);
+      if (line.startsWith('lastLogon: ')) cur.lastLogon = line.substring(11);
+      else if (line.startsWith('lastLogonTimestamp: ')) cur.lastLogonTimestamp = line.substring(19);
       else if (line.startsWith('logonCount: ')) cur.logonCount = parseInt(line.substring(12));
       else if (line.startsWith('badPwdCount: ')) cur.badPwdCount = parseInt(line.substring(13));
       else if (line.startsWith('pwdLastSet: ')) cur.pwdLastSet = line.substring(12);
       else if (line.startsWith('whenCreated: ')) cur.whenCreated = line.substring(13);
+      else if (line.startsWith('userAccountControl: ')) cur.userAccountControl = line.substring(20);
     });
-    if (cur.logonCount !== undefined) {
-      var lastLogonNt = parseInt(cur.lastLogon || '0');
-      var lastLogonTimestamp = parseInt(cur.lastLogonTimestamp || '0');
-      var lastLogonDate = (lastLogonNt > 0 && lastLogonNt < 999999999999999999) ? new Date(lastLogonNt / 10000 - 11644473600000) : ((lastLogonTimestamp > 0 && lastLogonTimestamp < 999999999999999999) ? new Date(lastLogonTimestamp / 10000 - 11644473600000) : null);
-      var daysSince = lastLogonDate ? Math.floor((Date.now() - lastLogonDate.getTime()) / 86400000) : null;
-      sessions.push({
-        sam: sam,
-        lastLogon: lastLogonDate ? lastLogonDate.toISOString() : null,
-        lastLogonDays: daysSince,
-        logonCount: cur.logonCount || 0,
-        badPwdCount: cur.badPwdCount || 0,
-        pwdLastSet: cur.pwdLastSet || '',
-        whenCreated: cur.whenCreated || ''
-      });
-    }
-    res.json({ success: true, sessions: sessions });
+    var lastLogonNt = parseInt(cur.lastLogon || '0');
+    var lastLogonTs = parseInt(cur.lastLogonTimestamp || '0');
+    var lastLogonDate = (lastLogonNt > 0 && lastLogonNt < 999999999999999999) ? new Date(lastLogonNt / 10000 - 11644473600000) : ((lastLogonTs > 0 && lastLogonTs < 999999999999999999) ? new Date(lastLogonTs / 10000 - 11644473600000) : null);
+    var uac = parseInt(cur.userAccountControl || '0');
+    var logon = {
+      sam: sam,
+      isActive: !(uac & 2),
+      lastLogon: lastLogonDate ? lastLogonDate.toISOString().split('T')[0] + ' ' + lastLogonDate.toTimeString().split(' ')[0] : null,
+      lastLogonTimestamp: null,
+      lastLogonDays: lastLogonDate ? Math.floor((Date.now() - lastLogonDate.getTime()) / 86400000) : null,
+      logonCount: cur.logonCount || 0,
+      badPwdCount: cur.badPwdCount || 0,
+      pwdLastSet: cur.pwdLastSet || null,
+      whenCreated: cur.whenCreated ? cur.whenCreated.replace(/^(\d{4})(\d{2})(\d{2}).*$/, '$1-$2-$3') : null
+    };
+    res.json({ success: true, logon: logon, computers: [] });
   } catch(e) {
-    res.json({ success: true, sessions: [] });
+    res.json({ success: true, logon: {}, computers: [] });
   }
 });
 
