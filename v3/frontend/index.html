@@ -424,6 +424,7 @@ body.dark .version-badge { background: rgba(96,165,250,0.15); border-color: rgba
       </div>
       <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
         <button class="btn btn-p btn-sm" onclick="loadPasswordReport()">📊 Сформировать отчёт</button>
+        <button class="btn btn-s btn-sm" onclick="downloadPasswordReport()">💾 Сохранить в файл</button>
         <div class="fg" style="flex-direction:row;align-items:center;gap:8px">
           <label style="text-transform:none;font-size:12px">Показывать за N дней:</label>
           <input type="number" id="pwd-days" value="30" style="width:60px;padding:4px 8px">
@@ -1937,6 +1938,11 @@ async function loadPasswordReport() {
     document.getElementById('pwd-results').innerHTML = `<span style="color:var(--red)">Ошибка: ${e.message}</span>`;
   }
   showL(false);
+}
+
+function downloadPasswordReport() {
+  const days = document.getElementById('pwd-days').value || 30;
+  window.location.href = '/api/report/passwords/download?days=' + days;
 }
 
 function showPwdTab(tab) {

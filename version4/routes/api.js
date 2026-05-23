@@ -58,7 +58,7 @@ function ldapSearch(client, baseDN, filter, attrs) {
       if (err) return reject(err);
       const results = [];
       res.on('searchEntry', (entry) => {
-        const obj = { dn: entry.objectName || '' };
+        const obj = { dn: String(entry.objectName || '') };
         entry.attributes.forEach(attr => {
           obj[attr.type] = attr.values.length === 1 ? attr.values[0] : attr.values;
         });
@@ -179,7 +179,17 @@ router.get('/groups/detail', isAuth, async (req, res) => {
       client.bind(bind.bindDN, bind.bindPass, (err) => err ? reject(err) : resolve());
     });
     
-    const groups = await ldapSearch(client, dn, '(objectClass=group)', ['cn', 'description', 'member', 'sAMAccountName']);
+    var detailOut = '';
+    try {
+      detailOut = require('child_process').execSync('ldapsearch -x -H "' + bind.host + '" -D "' + bind.bindDN + '" -w "' + bind.bindPass + '" -b "' + dn + '" -s base "(objectClass=*)" cn description member sAMAccountName -LLL 2>/dev/null', {shell:'/bin/bash', timeout:15000, maxBuffer:10*1024*1024}).toString();
+    } catch(e) {}
+    var groups = [], grp = null;
+    detailOut.split('\n').forEach(function(line) {
+      if (line.startsWith('dn: ')) { grp = { dn: line.substring(4), cn: '', description: '', member: [] }; groups.push(grp); }
+      else if (line.startsWith('cn: ') && grp) grp.cn = line.substring(4);
+      else if (line.startsWith('description: ') && grp) grp.description = line.substring(13);
+      else if (line.startsWith('member: ') && grp) { if (Array.isArray(grp.member)) grp.member.push(line.substring(8)); else grp.member = [line.substring(8)]; }
+    });
     if (!groups.length) return res.json({ success: false, error: 'Group not found' });
     
     const g = groups[0];
@@ -189,7 +199,7 @@ router.get('/groups/detail', isAuth, async (req, res) => {
     // Resolve member details
     const memberDetails = [];
     for (const memberDn of memberList.slice(0, 500)) {
-      const users = await ldapSearch(client, config.ldap.baseDN, `(distinguishedName=${memberDn})`, ['displayName', 'sAMAccountName', 'title', 'userAccountControl']);
+      const users = await ldapSearch(client, config.ldap.baseDN, "(distinguishedName=" + memberDn.replace(/[()\\]/g, '') + ")", ['displayName', 'sAMAccountName', 'title', 'userAccountControl']);
       if (users.length) {
         const u = users[0];
         const uac = parseInt(getAttr(u, 'userAccountControl') || '0');
@@ -202,7 +212,7 @@ router.get('/groups/detail', isAuth, async (req, res) => {
         });
       } else {
         // Could be a nested group
-        const subGroups = await ldapSearch(client, config.ldap.baseDN, `(distinguishedName=${memberDn})`, ['cn', 'sAMAccountName']);
+        const subGroups = await ldapSearch(client, config.ldap.baseDN, "(distinguishedName=" + memberDn.replace(/[()\\]/g, '') + ")", ['cn', 'sAMAccountName']);
         if (subGroups.length) {
           memberDetails.push({ name: getAttr(subGroups[0], 'cn'), sam: getAttr(subGroups[0], 'sAMAccountName'), type: 'group', disabled: false });
         }
@@ -321,6 +331,35 @@ router.get('/report/passwords', isAuth, async (req, res) => {
     expiring: expiring, expired: expired, noExpiry: noExpiry, noexpiry: noExpiry,
     total: cache.users.length
   });
+});
+
+// GET /api/report/passwords/download - CSV download
+router.get('/report/passwords/download', isAuth, async (req, res) => {
+  if (!cache.users.length) await loadADData(req);
+  const days = parseInt(req.query.days) || 30;
+  const now = Date.now(), dayMs = 86400000;
+  var lines = ['name;sam;title;department;status;daysUntilExpiry'];
+  cache.users.forEach(u => {
+    var uac = parseInt((u.userAccountControl) || '0');
+    var pwdLastSet = parseInt((u.pwdLastSet) || '0');
+    var neverExpires = !!(uac & 65536);
+    var name = (u.displayName || '').replace(/;/g,',');
+    var sam = (u.sAMAccountName || '');
+    var title = (u.title || '').replace(/;/g,',');
+    var dept = (u.department || '').replace(/;/,',');
+    if (pwdLastSet === 0) return;
+    if (neverExpires) {
+      lines.push(name + ';' + sam + ';' + title + ';' + dept + ';noexpiry;9999');
+    } else {
+      var expiresAt = pwdLastSet / 10000 - 11644473600000 + 42 * dayMs;
+      var daysLeft = Math.floor((expiresAt - now) / dayMs);
+      var status = daysLeft < 0 ? 'expired' : (daysLeft <= days ? 'expiring' : 'ok');
+      lines.push(name + ';' + sam + ';' + title + ';' + dept + ';' + status + ';' + daysLeft);
+    }
+  });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename=password_report.csv');
+  res.send('\uFEFF' + lines.join('\n'));
 });
 
 // GET /api/xlsx-view - v3 struct tab format
@@ -445,14 +484,80 @@ router.get('/computers/detail', isAuth, async (req, res) => {
   if (!cache.computers.length) await loadADData(req);
   const dn = req.query.dn;
   if (!dn) return res.json({ success: false, error: 'DN required' });
-  const comp = cache.computers.find(c => c.dn === dn);
-  if (!comp) return res.json({ success: false, error: 'Computer not found' });
+  const raw = cache.computers.find(c => c.dn === dn);
+  if (!raw) return res.json({ success: false, error: 'Computer not found' });
+  var now = Date.now();
+  var lastLogonNt = parseInt(raw.lastLogon || '0');
+  var lastLogonDate = (lastLogonNt > 0 && lastLogonNt < 999999999999999999) ? new Date(lastLogonNt / 10000 - 11644473600000) : null;
+  var lastLogonDays = lastLogonDate ? Math.floor((now - lastLogonDate.getTime()) / 86400000) : null;
+  var uac = parseInt(raw.uac || '0');
+  var dnParts = (raw.dn || '').split(',');
+  var ouParts = [];
+  for (var i = 1; i < dnParts.length; i++) {
+    if (dnParts[i].trim().startsWith('OU=')) ouParts.push(dnParts[i].trim().substring(3));
+  }
+  var comp = {
+    cn: raw.cn || '',
+    dn: raw.dn || '',
+    sam: raw.sAMAccountName || raw.cn || '',
+    dns: raw.dns || raw.dNSHostName || '',
+    os: raw.os || raw.operatingSystem || '',
+    osVersion: raw.operatingSystemServicePack || raw.sp || '',
+    description: raw.desc || raw.description || '',
+    disabled: !!(uac & 2),
+    lastLogon: lastLogonDate ? lastLogonDate.toISOString() : null,
+    lastLogonDays: lastLogonDays,
+    created: raw.whenCreated ? raw.whenCreated.replace(/^(\d{4})(\d{2})(\d{2}).*$/, '$1-$2-$3') : null,
+    whenCreated: raw.whenCreated || '',
+    ou: ouParts.join(' > '),
+    region: ''
+  };
+  for (var p of dnParts) {
+    var t = p.trim();
+    if (t.startsWith('OU=')) {
+      var code = t.substring(3);
+      if (['RND','STV','KRD','MSK','NIZ','VRN','VLC','BDN','LPK'].includes(code)) { comp.region = code; break; }
+    }
+  }
   res.json({ success: true, computer: comp });
 });
 
 // GET /api/user/sessions
 router.get('/user/sessions', isAuth, async (req, res) => {
-  res.json({ success: true, sessions: [] });
+  try {
+    const sam = req.query.sam;
+    if (!sam) return res.json({ success: true, sessions: [] });
+    const bind = getBindInfo(req);
+    const { execSync } = require('child_process');
+    var out = execSync("ldapsearch -x -H '" + bind.host + "' -D '" + bind.bindDN + "' -w '" + bind.bindPass + "' -b 'DC=rusagroeco,DC=ru' '(&(objectClass=user)(sAMAccountName=" + sam.replace(/[()*\\]/g,'') + "))' lastLogon lastLogonTimestamp logonCount badPwdCount pwdLastSet whenCreated -LLL 2>/dev/null", {shell:'/bin/bash', timeout:15000, maxBuffer:5*1024*1024}).toString();
+    var sessions = [], cur = {};
+    out.split('\n').forEach(function(line) {
+      if (line.startsWith('lastLogon: ') && !cur.lastLogon) cur.lastLogon = line.substring(11);
+      else if (line.startsWith('lastLogonTimestamp: ') && !cur.lastLogonTimestamp) cur.lastLogonTimestamp = line.substring(19);
+      else if (line.startsWith('logonCount: ')) cur.logonCount = parseInt(line.substring(12));
+      else if (line.startsWith('badPwdCount: ')) cur.badPwdCount = parseInt(line.substring(13));
+      else if (line.startsWith('pwdLastSet: ')) cur.pwdLastSet = line.substring(12);
+      else if (line.startsWith('whenCreated: ')) cur.whenCreated = line.substring(13);
+    });
+    if (cur.logonCount !== undefined) {
+      var lastLogonNt = parseInt(cur.lastLogon || '0');
+      var lastLogonTimestamp = parseInt(cur.lastLogonTimestamp || '0');
+      var lastLogonDate = (lastLogonNt > 0 && lastLogonNt < 999999999999999999) ? new Date(lastLogonNt / 10000 - 11644473600000) : ((lastLogonTimestamp > 0 && lastLogonTimestamp < 999999999999999999) ? new Date(lastLogonTimestamp / 10000 - 11644473600000) : null);
+      var daysSince = lastLogonDate ? Math.floor((Date.now() - lastLogonDate.getTime()) / 86400000) : null;
+      sessions.push({
+        sam: sam,
+        lastLogon: lastLogonDate ? lastLogonDate.toISOString() : null,
+        lastLogonDays: daysSince,
+        logonCount: cur.logonCount || 0,
+        badPwdCount: cur.badPwdCount || 0,
+        pwdLastSet: cur.pwdLastSet || '',
+        whenCreated: cur.whenCreated || ''
+      });
+    }
+    res.json({ success: true, sessions: sessions });
+  } catch(e) {
+    res.json({ success: true, sessions: [] });
+  }
 });
 
 module.exports = router;
