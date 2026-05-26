@@ -1,0 +1,101 @@
+{
+  "operators": [
+    {
+      "id": "op1",
+      "name": "Оператор 1",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op2",
+      "name": "Оператор 2",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op3",
+      "name": "Оператор 3",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op4",
+      "name": "Оператор 4",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op5",
+      "name": "Оператор 5",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op6",
+      "name": "Оператор 6",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": false,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    },
+    {
+      "id": "op7",
+      "name": "Менеджер",
+      "status": "offline",
+      "loggedIn": false,
+      "isManager": true,
+      "currentCalls": [],
+      "shift": null,
+      "breaks": [],
+      "processingTimes": []
+    }
+  ],
+  "calls": [
+    {
+      "id": "33e0f3e8-32df-44f5-adc3-5e182fa3e63b",
+      "callerNumber": "+79991234567",
+      "priority": 1,
+      "status": "queued",
+      "createdAt": 1779798965832
+    }
+  ],
+  "callQueue": [
+    {
+      "id": "33e0f3e8-32df-44f5-adc3-5e182fa3e63b",
+      "callerNumber": "+79991234567",
+      "priority": 1,
+      "status": "queued",
+      "createdAt": 1779798965832
+    }
+  ],
+  "analyticsData": [],
+  "shifts": []
+}

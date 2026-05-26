@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Center - Панель руководителя</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .operators-monitor {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .operator-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .operator-card.manager {
+            border-left-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+
+        .operator-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .operator-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .status-free { background: #10b981; color: white; }
+        .status-busy { background: #ef4444; color: white; }
+        .status-break { background: #f59e0b; color: white; }
+        .status-processing { background: #3b82f6; color: white; }
+        .status-offline { background: #6b7280; color: white; }
+
+        .queue-status {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .priority-1 { background: #ef4444; color: white; }
+        .priority-2 { background: #f59e0b; color: white; }
+        .priority-3 { background: #10b981; color: white; }
+
+        .alert-banner {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-banner.active {
+            display: block;
+        }
+
+        .export-section {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .period-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Call Center - Панель руководителя</h1>
+        </div>
+
+        <!-- VIP Alert Banner -->
+        <div id="vipAlert" class="alert-banner">
+            <strong>⚠️ ВНИМАНИЕ!</strong> Поступил VIP-звонок! Требуется немедленная реакция.
+            <span id="vipTimer"></span>
+        </div>
+
+        <!-- Main Stats -->
+        <div class="dashboard-grid">
+            <div class="panel">
+                <h2>📈 Общая статистика</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCalls">0</div>
+                        <div class="stat-label">Всего звонков</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="answeredCalls">0</div>
+                        <div class="stat-label">Отвечено</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="missedCalls">0</div>
+                        <div class="stat-label">Пропущено</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgWaitTime">0</div>
+                        <div class="stat-label">Сред. ожидание (сек)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>👥 Операторы в смене</h2>
+                <div id="operatorsMonitor" class="operators-monitor">
+                    <!-- Operator cards will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Queue Status -->
+        <div class="panel">
+            <h2>📞 Текущая очередь звонков</h2>
+            <div id="queueStatus">
+                <p style="color: #666;">Очередь пуста</p>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="panel" style="margin-top: 20px;">
+            <h2>📋 Детальная аналитика</h2>
+            
+            <div class="period-selector">
+                <button class="period-btn" onclick="setPeriod('hour')">Час</button>
+                <button class="period-btn active" onclick="setPeriod('day')">День</button>
+                <button class="period-btn" onclick="setPeriod('week')">Неделя</button>
+                <button class="period-btn" onclick="setPeriod('month')">Месяц</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Оператор</th>
+                        <th>Звонков</th>
+                        <th>Среднее время ожидания</th>
+                        <th>Средняя длительность</th>
+                        <th>Переадресовано</th>
+                        <th>Пропущено</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsTable">
+                </tbody>
+            </table>
+
+            <div class="export-section">
+                <h3 style="margin-bottom: 15px;">Экспорт отчетов</h3>
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportReport('csv')">📥 CSV</button>
+                    <button class="btn btn-success" onclick="exportReport('excel')">📥 Excel</button>
+                    <button class="btn btn-primary" onclick="exportReport('api')">📤 Отправить в систему отчетности (API)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPeriod = 'day';
+        let operators = [];
+        let analytics = {};
+        let queue = [];
+        let ws = null;
+
+        // Connect to WebSocket for real-time updates
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = () => {
+                console.log('Connected to server');
+                loadData();
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'update') {
+                    operators = data.operators;
+                    queue = data.queue;
+                    updateDashboard();
+                    
+                    // Check for VIP calls
+                    const vipCalls = queue.filter(c => c.priority === 1);
+                    if (vipCalls.length > 0) {
+                        showVIPAlert(vipCalls);
+                    } else {
+                        hideVIPAlert();
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function loadData() {
+            loadAnalytics();
+        }
+
+        function loadAnalytics() {
+            fetch(`http://localhost:3000/api/analytics?period=${currentPeriod}`)
+                .then(res => res.json())
+                .then(data => {
+                    analytics = data;
+                    renderAnalytics(data);
+                });
+        }
+
+        function setPeriod(period) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === 
+                    (period === 'hour' ? 'час' : period === 'day' ? 'день' : period === 'week' ? 'неделя' : 'месяц')) {
+                    btn.classList.add('active');
+                }
+            });
+            loadAnalytics();
+        }
+
+        function updateDashboard() {
+            // Update operators monitor
+            const container = document.getElementById('operatorsMonitor');
+            container.innerHTML = '';
+
+            operators.forEach(op => {
+                const card = document.createElement('div');
+                card.className = `operator-card ${op.isManager ? 'manager' : ''}`;
+                card.innerHTML = `
+                    <div class="operator-name">${op.name} ${op.isManager ? '(Менеджер)' : ''}</div>
+                    <span class="status-badge status-${op.status}">${getStatusText(op.status)}</span>
+                    <div class="operator-stats" style="margin-top: 10px;">
+                        <div>ID: ${op.id}</div>
+                        <div>Звонков: ${op.currentCalls?.length || 0}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Update queue status
+            const queueContainer = document.getElementById('queueStatus');
+            if (queue.length === 0) {
+                queueContainer.innerHTML = '<p style="color: #666;">Очередь пуста</p>';
+            } else {
+                queueContainer.innerHTML = '';
+                queue.forEach((call, index) => {
+                    const waitTime = Math.floor((Date.now() - call.createdAt) / 1000);
+                    const item = document.createElement('div');
+                    item.className = 'queue-item';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${call.callerNumber}</strong>
+                            <span class="priority-badge priority-${call.priority}">Приоритет ${call.priority}</span>
+                        </div>
+                        <div>В очереди: ${formatTime(waitTime)} | Позиция: ${index + 1}</div>
+                    `;
+                    queueContainer.appendChild(item);
+                });
+            }
+
+            // Update summary stats
+            document.getElementById('totalCalls').textContent = analytics.totalCalls || 0;
+            document.getElementById('answeredCalls').textContent = analytics.answeredCalls || 0;
+            document.getElementById('missedCalls').textContent = 
+                ((analytics.totalCalls || 0) - (analytics.answeredCalls || 0)).toString();
+            document.getElementById('avgWaitTime').textContent = 
+                Math.round(analytics.avgWaitTime || 0).toString();
+        }
+
+        function renderAnalytics(data) {
+            const tbody = document.getElementById('analyticsTable');
+            tbody.innerHTML = '';
+
+            if (data.byOperator) {
+                Object.values(data.byOperator).forEach(op => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${op.name}</strong></td>
+                        <td>${op.totalCalls}</td>
+                        <td>${Math.round(op.avgWaitTime)} сек</td>
+                        <td>${Math.round(op.avgCallDuration)} сек</td>
+                        <td>${data.transferredCalls || 0}</td>
+                        <td>-</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            updateDashboard();
+        }
+
+        function showVIPAlert(calls) {
+            const banner = document.getElementById('vipAlert');
+            banner.classList.add('active');
+            
+            const timer = document.getElementById('vipTimer');
+            let seconds = 30;
+            
+            const interval = setInterval(() => {
+                seconds--;
+                timer.textContent = ` До эскалации: ${seconds} сек`;
+                
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    banner.classList.remove('active');
+                }
+            }, 1000);
+        }
+
+        function hideVIPAlert() {
+            document.getElementById('vipAlert').classList.remove('active');
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'free': 'Свободен',
+                'busy': 'Занят',
+                'break': 'Перерыв',
+                'processing': 'Обработка',
+                'offline': 'Оффлайн'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function exportReport(format) {
+            if (format === 'csv') {
+                window.location.href = 'http://localhost:3000/api/analytics/export?format=csv&period=' + currentPeriod;
+            } else if (format === 'excel') {
+                alert('Экспорт в Excel будет реализован через библиотеку xlsx');
+            } else if (format === 'api') {
+                // Simulate API integration
+                fetch('http://localhost:3000/api/analytics?period=' + currentPeriod)
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log('Sending to reporting system:', data);
+                        alert('Данные отправлены в систему отчетности');
+                    });
+            }
+        }
+
+        // Initialize
+        connectWebSocket();
+        loadAnalytics();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadAnalytics, 30000);
+    </script>
+</body>
+</html>
