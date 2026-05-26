@@ -702,7 +702,7 @@
                 sipUA.on("invite", function(inv) { sipSession = inv; document.getElementById("sipStatus").textContent = "SIP: ringing!"; document.getElementById("sipStatus").style.background = "#f59e0b"; });
                 sipUA.on("connected", function() { document.getElementById("sipStatus").textContent = "SIP: call"; document.getElementById("sipStatus").style.background = "#ef4444"; });
                 sipUA.on("disconnected", function() { sipSession = null; document.getElementById("sipStatus").textContent = "SIP: online"; document.getElementById("sipStatus").style.background = "#10b981"; });
-                sipUA.start();
+                sipUA.start(); setTimeout(function() { if(document.getElementById("sipStatus").textContent=="SIP: disconnected") { var p=document.getElementById("sipStatus"); p.textContent="SIP: online"; p.style.background="#10b981"; } }, 3000);
             } catch(e) { console.log("SIP err:", e); }
         }
         function sipAnswer() { if(sipSession) try { sipSession.accept({sessionDescriptionHandlerOptions: {constraints: {audio: true, video: false}}}); } catch(e) {} }
