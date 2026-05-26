@@ -693,7 +693,7 @@
     
         // === SIP WebRTC Phone ===
         var sipUA = null, sipSession = null, SIP_DOMAIN = "10.1.17.124", SIP_EXT = "601", SIP_PASS = "Agent601!";
-        var SIP_WS = "wss://" + SIP_DOMAIN + ":7443";
+        var SIP_WS = "wss://" + SIP_DOMAIN + "/fsws";
         function startSIP() {
             try {
                 sipUA = new SIP.UA({uri: SIP_EXT + "@" + SIP_DOMAIN, password: SIP_PASS, transportOptions: {wsServers: [SIP_WS]}, displayName: SIP_EXT, register: true, sessionDescriptionHandlerFactoryOptions: {constraints: {audio: true, video: false}}});
