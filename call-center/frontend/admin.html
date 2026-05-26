@@ -415,7 +415,7 @@
         }
 
         function loadOperators() {
-            fetch('http://localhost:3000/api/operators')
+            fetch('/api/operators')
                 .then(res => res.json())
                 .then(data => {
                     operators = data;
@@ -461,7 +461,7 @@
                 return;
             }
 
-            fetch('http://localhost:3000/api/operators', {
+            fetch('/api/operators', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, isManager })
@@ -489,7 +489,7 @@
         function loadAnalytics() {
             const period = document.getElementById('analyticsPeriod').value;
             
-            fetch(`http://localhost:3000/api/analytics?period=${period}`)
+            fetch(`/api/analytics?period=${period}`)
                 .then(res => res.json())
                 .then(data => {
                     analytics = data;
@@ -521,11 +521,11 @@
         }
 
         function exportCSV() {
-            window.location.href = 'http://localhost:3000/api/analytics/export?format=csv';
+            window.location.href = '/api/analytics/export?format=csv';
         }
 
         function exportJSON() {
-            window.location.href = 'http://localhost:3000/api/analytics/export?format=json';
+            window.location.href = '/api/analytics/export?format=json';
         }
 
         // Initialize

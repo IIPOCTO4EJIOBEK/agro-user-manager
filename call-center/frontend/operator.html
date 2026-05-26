@@ -295,6 +295,7 @@
             display: none;
         }
     </style>
+<script src="/sip.min.js"></script>
 </head>
 <body>
     <!-- Login Modal -->
@@ -314,7 +315,8 @@
     <div class="container">
         <div class="header">
             <h1>📞 Call Center - Панель оператора</h1>
-            <div class="operator-info">
+            <div style="margin-bottom:8px"><span id="sipStatus" style="padding:4px 12px;border-radius:10px;background:#ef4444;color:#fff;font-size:12px">SIP: disconnected</span> <button class="btn btn-success" style="font-size:11px;padding:4px 10px" onclick="sipAnswer()">Answer</button> <button class="btn btn-danger" style="font-size:11px;padding:4px 10px" onclick="sipHangup()">Hangup</button></div>
+<div class="operator-info">
                 <div>
                     <span id="operatorName">Оператор: </span>
                     <span id="currentStatus" class="status-badge status-offline">Оффлайн</span>
@@ -327,6 +329,29 @@
         </div>
 
         <div class="main-content">
+            <div class="panel">
+                <h2>📞 Исходящий</h2>
+                <div style="display:flex;gap:5px;margin-bottom:10px">
+                    <input id="dialInput" type="text" placeholder="Номер" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:16px">
+                    <button class="btn btn-success" onclick="makeCall()" style="padding:10px 20px;font-size:18px">📞</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='1'">1</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='2'">2</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='3'">3</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='4'">4</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='5'">5</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='6'">6</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='7'">7</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='8'">8</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='9'">9</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='*'">*</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='0'">0</button>
+                    <button class="btn" style="padding:12px;font-size:16px" onclick="document.getElementById('dialInput').value+='#'">#</button>
+                </div>
+                <button class="btn btn-danger" style="width:100%;margin-top:5px" onclick="document.getElementById('dialInput').value=''">Очистить</button>
+            </div>
+
             <div class="panel">
                 <h2>📋 Мои звонки</h2>
                 <div id="callTimer" class="timer hidden"></div>
@@ -377,11 +402,12 @@
 
         // Connect to WebSocket
         function connectWebSocket() {
-            ws = new WebSocket('ws://localhost:8080');
+            ws = new WebSocket('wss://10.1.17.124/ws');
 
             ws.onopen = () => {
                 console.log('Connected to server');
                 loadOperators();
+                startSIP();
             };
 
             ws.onmessage = (event) => {
@@ -414,7 +440,7 @@
         }
 
         function loadOperators() {
-            fetch('http://localhost:3000/api/operators')
+            fetch('/api/operators')
                 .then(res => res.json())
                 .then(data => {
                     operators = data;
@@ -664,6 +690,25 @@
 
         // Initialize
         connectWebSocket();
-    </script>
+    
+        // === SIP WebRTC Phone ===
+        var sipUA = null, sipSession = null, SIP_DOMAIN = "10.1.17.124", SIP_EXT = "601", SIP_PASS = "Agent601!";
+        var SIP_WS = "wss://" + SIP_DOMAIN + ":7443";
+        function startSIP() {
+            try {
+                sipUA = new SIP.UA({uri: SIP_EXT + "@" + SIP_DOMAIN, password: SIP_PASS, transportOptions: {wsServers: [SIP_WS]}, displayName: SIP_EXT, register: true, sessionDescriptionHandlerFactoryOptions: {constraints: {audio: true, video: false}}});
+                sipUA.on("registered", function() { document.getElementById("sipStatus").textContent = "SIP: online"; document.getElementById("sipStatus").style.background = "#10b981"; });
+                sipUA.on("registrationFailed", function() { document.getElementById("sipStatus").textContent = "SIP: error"; });
+                sipUA.on("invite", function(inv) { sipSession = inv; document.getElementById("sipStatus").textContent = "SIP: ringing!"; document.getElementById("sipStatus").style.background = "#f59e0b"; });
+                sipUA.on("connected", function() { document.getElementById("sipStatus").textContent = "SIP: call"; document.getElementById("sipStatus").style.background = "#ef4444"; });
+                sipUA.on("disconnected", function() { sipSession = null; document.getElementById("sipStatus").textContent = "SIP: online"; document.getElementById("sipStatus").style.background = "#10b981"; });
+                sipUA.start();
+            } catch(e) { console.log("SIP err:", e); }
+        }
+        function sipAnswer() { if(sipSession) try { sipSession.accept({sessionDescriptionHandlerOptions: {constraints: {audio: true, video: false}}}); } catch(e) {} }
+        function sipReject() { if(sipSession) try { sipSession.reject(); } catch(e) {} sipSession = null; }
+        function sipHangup() { if(sipSession) try { sipSession.bye(); } catch(e) {} sipSession = null; }
+        function makeCall() { var n = document.getElementById('dialInput').value.trim(); if(!n) return; if(!sipUA) { alert('SIP не подключён'); return; } try { sipSession = sipUA.invite('sip:' + n + '@10.1.17.124', {sessionDescriptionHandlerOptions: {constraints: {audio: true, video: false}}}); alert('Вызов ' + n); } catch(e) { alert('Ошибка: ' + e.message); } }
+</script>
 </body>
 </html>
