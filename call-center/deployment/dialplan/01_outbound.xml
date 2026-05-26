@@ -1,0 +1,15 @@
+<include>
+  <!-- Russian mobile: +79xxxxxxxxx, 89xxxxxxxxx, 79xxxxxxxxx -->
+  <extension name="outbound_mobile">
+    <condition field="destination_number" expression="^(\+?7|8)?(9\d{9})$">
+      <action application="bridge" data="sofia/external/7$2@SIP-RTK"/>
+    </condition>
+  </extension>
+  
+  <!-- Any other number - route via RTK -->
+  <extension name="outbound_any">
+    <condition field="destination_number" expression="^(.*)$">
+      <action application="bridge" data="sofia/external/$1@SIP-RTK"/>
+    </condition>
+  </extension>
+</include>
