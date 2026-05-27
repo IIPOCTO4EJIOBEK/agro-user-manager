@@ -1,34 +1,26 @@
 ```
 # Dependencies
-node_modules/
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Build artifacts
-dist/
-build/
-
-# Editor/IDE files
-.vscode/
-.idea/
-
-# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
+venv/
+.env
+.env.local
+*.env.*
 
-# Package lock files
-package-lock.json
+# Logs and temp files
+*.log
+*.tmp
+*.swp
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Editors
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
 ```
